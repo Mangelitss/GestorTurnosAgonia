@@ -127,8 +127,12 @@ service cloud.firestore {
 
     // ---------- PROCESIONES ----------
     // Lectura publica SOLO si esta publicada (web de costaleros).
+    //
+    // Ojo al orden: la condicion barata va primera. puedeVer() hace un
+    // get() a /cuadrilleros, que se cobra como lectura. Poniendo antes
+    // publicado == true, el visitante del portal no genera ese get().
     match /procesiones/{id} {
-      allow read: if puedeVer() || resource.data.publicado == true;
+      allow read: if resource.data.publicado == true || puedeVer();
       allow create, update: if puedeEditar();
       allow delete: if puedeAdmin();
     }
