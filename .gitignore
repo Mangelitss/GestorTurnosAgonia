@@ -1,0 +1,51 @@
+# =============================================================
+#  Gestor de Turnos · Cristo de la Agonía
+# =============================================================
+
+# ---- Node / web ----
+node_modules/
+dist/
+dist-ssr/
+.vite/
+*.local
+.env
+.env.local
+.env.*.local
+
+# ---- Firebase ----
+.firebase/
+firebase-debug.log
+.firebaserc
+
+# ---- Python (programa antiguo) ----
+build/
+dist/
+*.spec
+__pycache__/
+*.pyc
+
+# ---- Datos personales del tercio ----
+# El censo real y sus copias NUNCA se suben: nombres, telefonos y alturas
+# de personas concretas. Viven solo en el ordenador y en Firestore.
+datos.json
+censo_backup_*.json
+temp_publicar_convertido.json
+
+# ---- Archivos locales de sesión ----
+# Contienen la contraseña de licencia ofuscada: nunca deben subirse
+licencia_local.json
+informe_generado.html
+
+# ---- Salidas generadas por el programa antiguo ----
+visualizador_interactivo.html
+visualizador_miercoles.html
+visualizador_viernes.html
+visualizador_ensayos.html
+visualizador_viacrucis.html
+visualizador_personalizado.html
+Gestor_Temp.exe
+
+# ---- Sistema operativo ----
+.DS_Store
+Thumbs.db
+desktop.ini

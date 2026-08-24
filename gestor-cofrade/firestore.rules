@@ -1,0 +1,175 @@
+rules_version = '2';
+
+// =============================================================
+//  REGLAS DE SEGURIDAD — Gestor Cofrade Cristo de la Agonia
+// =============================================================
+//  Copia TODO este contenido en:
+//  Consola Firebase -> Firestore Database -> pestaña "Reglas" -> Publicar
+//
+//  ROLES (de mayor a menor):
+//    superadmin  -> control absoluto. Nadie puede tocarle.
+//    admin       -> gestiona el tercio y da de alta cuadrilleros.
+//    cuadrillero -> censo, procesiones, ensayos, calendario.
+//    consulta    -> solo lectura.
+// =============================================================
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ---------- FUNCIONES AUXILIARES ----------
+
+    function autenticado() {
+      return request.auth != null;
+    }
+
+    function ficha() {
+      return get(/databases/$(database)/documents/cuadrilleros/$(request.auth.uid)).data;
+    }
+
+    function existeFicha() {
+      return autenticado()
+        && exists(/databases/$(database)/documents/cuadrilleros/$(request.auth.uid));
+    }
+
+    // Usuario dado de alta y no bloqueado
+    function activo() {
+      return existeFicha() && ficha().activo == true;
+    }
+
+    function miRol() {
+      return activo() ? ficha().rol : 'ninguno';
+    }
+
+    // Nivel numerico de cada rol
+    function nivel(r) {
+      return r == 'superadmin' ? 100
+           : r == 'admin'       ? 75
+           : r == 'cuadrillero' ? 50
+           : r == 'consulta'    ? 10
+           : 0;
+    }
+
+    function miNivel() {
+      return nivel(miRol());
+    }
+
+    // --- Atajos por capacidad ---
+    function esSupremo()  { return miRol() == 'superadmin'; }
+    function puedeVer()   { return miNivel() >= 10; }   // consulta o superior
+    function puedeEditar(){ return miNivel() >= 50; }   // cuadrillero o superior
+    function puedeAdmin() { return miNivel() >= 75; }   // admin o superior
+
+    // ---------- LICENCIAS ----------
+    match /licencias/{codigo} {
+      // Cualquiera puede leer UNA licencia concreta para verificar su codigo
+      // antes de registrarse. Listar la coleccion requiere ser admin.
+      allow get: if true;
+      allow list: if puedeAdmin();
+
+      allow create, delete: if puedeAdmin();
+
+      // Actualizar: o eres admin, o estas consumiendo una licencia libre
+      // al registrarte (le pones tu propio uid y no puedes tocar el rol).
+      allow update: if puedeAdmin()
+        || (
+             autenticado()
+             && resource.data.uid == null
+             && resource.data.activa == true
+             && request.resource.data.uid == request.auth.uid
+             && request.resource.data.rol == resource.data.rol
+             && request.resource.data.activa == resource.data.activa
+           );
+    }
+
+    // ---------- CUADRILLEROS ----------
+    match /cuadrilleros/{uid} {
+      allow read: if autenticado() && (request.auth.uid == uid || puedeVer());
+
+      // Solo puedes crear TU ficha, con tu uid, y el rol debe coincidir
+      // con el de la licencia que estas consumiendo. Nadie se autoproclama
+      // superadmin desde la aplicacion.
+      allow create: if autenticado()
+        && request.auth.uid == uid
+        && request.resource.data.rol != 'superadmin'
+        && request.resource.data.activo == true
+        && request.resource.data.rol ==
+             get(/databases/$(database)/documents/licencias/$(request.resource.data.licencia)).data.rol;
+
+      // Actualizar tu propia ficha SIN cambiarte el rol ni reactivarte
+      allow update: if autenticado()
+        && request.auth.uid == uid
+        && request.resource.data.rol == resource.data.rol
+        && request.resource.data.activo == resource.data.activo;
+
+      // Un admin puede gestionar a otros, pero:
+      //   - nunca a un superadmin
+      //   - nunca asignar el rol de superadmin
+      //   - nunca a alguien de su mismo nivel o superior
+      allow update: if puedeAdmin()
+        && resource.data.rol != 'superadmin'
+        && request.resource.data.rol != 'superadmin'
+        && miNivel() > nivel(resource.data.rol)
+        && miNivel() > nivel(request.resource.data.rol);
+
+      // El superadmin puede con todo (menos autodestruirse por accidente)
+      allow update: if esSupremo() && resource.data.rol != 'superadmin';
+
+      allow delete: if esSupremo() && resource.data.rol != 'superadmin';
+    }
+
+    // ---------- CENSO DE COSTALEROS ----------
+    // Datos personales: nunca son publicos.
+    match /costaleros/{id} {
+      allow read: if puedeVer();
+      allow create, update: if puedeEditar();
+      allow delete: if puedeAdmin();
+    }
+
+    // ---------- PROCESIONES ----------
+    // Lectura publica SOLO si esta publicada (web de costaleros).
+    match /procesiones/{id} {
+      allow read: if puedeVer() || resource.data.publicado == true;
+      allow create, update: if puedeEditar();
+      allow delete: if puedeAdmin();
+    }
+
+    // ---------- CALENDARIO ----------
+    // Publico en lectura: los costaleros ven los ensayos convocados.
+    match /calendario/{id} {
+      allow read: if true;
+      allow write: if puedeEditar();
+    }
+
+    // ---------- ENSAYOS ----------
+    match /ensayos/{id} {
+      allow read: if puedeVer();
+      allow write: if puedeEditar();
+    }
+
+    // ---------- BLOQUEOS DE EDICION ----------
+    // Marcan quien esta editando una procesion o un ensayo, para que
+    // dos cuadrilleros no se pisen. Caducan solos a los 3 minutos.
+    match /bloqueos/{clave} {
+      allow read: if puedeVer();
+
+      // Solo puedes crear o pisar un bloqueo poniendo TU uid
+      allow create, update: if puedeEditar()
+        && request.resource.data.uid == request.auth.uid;
+
+      // Y solo puedes soltar el tuyo
+      allow delete: if puedeEditar() && resource.data.uid == request.auth.uid;
+    }
+
+    // ---------- CONFIGURACION ----------
+    match /config/{doc} {
+      allow read: if autenticado();
+      // El limite de cuadrilleros solo lo toca el supremo
+      allow write: if doc == 'general' ? esSupremo() : puedeEditar();
+    }
+
+    // ---------- POR DEFECTO: DENEGAR TODO ----------
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
