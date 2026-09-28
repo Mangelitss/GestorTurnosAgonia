@@ -11,6 +11,7 @@ import {
 } from '../lib/procesiones'
 import { TIPOS_PROCESION, ESTADOS_PROCESION, PRESETS_PROCESION } from '../lib/constantes'
 import { ocupantes } from '../lib/cuadrante'
+import { normalizar } from '../lib/censo'
 import { P } from '../lib/roles'
 import { useAuth } from '../context/AuthContext'
 import { Page, PageHeader, Cargando, Vacio, Modal, Alerta, Toast } from '../components/ui'
@@ -334,24 +335,31 @@ function TarjetaProcesion({ procesion: p, puedeEditar, puedeBorrar, archivada, o
 function ModalNuevaProcesion({ abierto, existentes, onCerrar, onCrear }) {
   const [tipo, setTipo] = useState('miercoles')
   const [anio, setAnio] = useState(new Date().getFullYear())
+  const [nombre, setNombre] = useState('')
   const [error, setError] = useState('')
 
   useEffect(() => {
     if (abierto) {
       setTipo('miercoles')
       setAnio(new Date().getFullYear())
+      setNombre('')
       setError('')
     }
   }, [abierto])
 
-  const preset = PRESETS_PROCESION[tipo]
-  const yaExiste = existentes.some((p) => p.tipo === tipo && Number(p.anio) === Number(anio))
+  const yaExiste = existeMismoDia(existentes, tipo, anio)
 
   const enviar = (e) => {
     e.preventDefault()
     if (!anio || anio < 2000 || anio > 2100) return setError('Escribe un año válido.')
-    if (yaExiste && !confirm(`Ya existe una procesión de ${TIPOS_PROCESION[tipo].nombre} en ${anio}.\n\n¿Crear otra igualmente?`)) return
-    onCrear(procesionVacia(tipo, anio))
+
+    const datos = procesionVacia(tipo, anio)
+    if (yaExiste) {
+      const fallo = validarNombrePersonalizado(nombre, datos.nombre, existentes)
+      if (fallo) return setError(fallo)
+      datos.nombre = nombre.trim()
+    }
+    onCrear(datos)
   }
 
   return (
@@ -370,7 +378,7 @@ function ModalNuevaProcesion({ abierto, existentes, onCerrar, onCrear }) {
                 <input
                   type="radio" name="tipo" value={t.id}
                   checked={tipo === t.id}
-                  onChange={() => setTipo(t.id)}
+                  onChange={() => { setTipo(t.id); setError('') }}
                   className="w-4 h-4 accent-morado mt-0.5"
                 />
                 <div className="min-w-0">
@@ -394,14 +402,17 @@ function ModalNuevaProcesion({ abierto, existentes, onCerrar, onCrear }) {
           <label className="label">Año</label>
           <input
             type="number" className="input w-32" min={2000} max={2100}
-            value={anio} onChange={(e) => setAnio(Number(e.target.value))}
+            value={anio} onChange={(e) => { setAnio(Number(e.target.value)); setError('') }}
           />
         </div>
 
         {yaExiste && (
-          <Alerta tipo="aviso">
-            Ya tienes una procesión de <b>{TIPOS_PROCESION[tipo].nombre}</b> en {anio}.
-          </Alerta>
+          <CampoNombreObligatorio
+            tipoNombre={TIPOS_PROCESION[tipo].nombre}
+            anio={anio}
+            nombre={nombre}
+            onCambiar={(v) => { setNombre(v); setError('') }}
+          />
         )}
 
         <Alerta tipo="info">
@@ -425,17 +436,31 @@ function ModalNuevaProcesion({ abierto, existentes, onCerrar, onCrear }) {
 
 function ModalDuplicar({ origen, existentes, onCerrar, onCrear }) {
   const [anio, setAnio] = useState(new Date().getFullYear() + 1)
+  const [nombre, setNombre] = useState('')
+  const [error, setError] = useState('')
 
   useEffect(() => {
-    if (origen) setAnio(Number(origen.anio) + 1)
+    if (origen) {
+      setAnio(Number(origen.anio) + 1)
+      setNombre('')
+      setError('')
+    }
   }, [origen])
 
   if (!origen) return null
 
   const tipo = TIPOS_PROCESION[origen.tipo] || TIPOS_PROCESION.extraordinaria
-  const yaExiste = existentes.some(
-    (p) => p.tipo === origen.tipo && Number(p.anio) === Number(anio)
-  )
+  const yaExiste = existeMismoDia(existentes, origen.tipo, anio)
+
+  const duplicar = () => {
+    const datos = duplicarEstructura(origen, anio)
+    if (yaExiste) {
+      const fallo = validarNombrePersonalizado(nombre, datos.nombre, existentes)
+      if (fallo) return setError(fallo)
+      datos.nombre = nombre.trim()
+    }
+    onCrear(datos)
+  }
 
   return (
     <Modal abierto={!!origen} onCerrar={onCerrar} titulo="Duplicar procesión">
@@ -451,27 +476,69 @@ function ModalDuplicar({ origen, existentes, onCerrar, onCrear }) {
         <label className="label">Año de la nueva procesión</label>
         <input
           type="number" className="input w-32" min={2000} max={2100}
-          value={anio} onChange={(e) => setAnio(Number(e.target.value))}
+          value={anio} onChange={(e) => { setAnio(Number(e.target.value)); setError('') }}
         />
       </div>
 
       {yaExiste && (
         <div className="mb-5">
-          <Alerta tipo="aviso">
-            Ya existe una procesión de <b>{tipo.nombre}</b> en {anio}.
-          </Alerta>
+          <CampoNombreObligatorio
+            tipoNombre={tipo.nombre}
+            anio={anio}
+            nombre={nombre}
+            onCambiar={(v) => { setNombre(v); setError('') }}
+          />
         </div>
       )}
 
+      {error && <div className="mb-5"><Alerta tipo="error">{error}</Alerta></div>}
+
       <div className="flex gap-2 justify-end">
         <button onClick={onCerrar} className="btn-ghost">Cancelar</button>
-        <button
-          onClick={() => onCrear(duplicarEstructura(origen, anio))}
-          className="btn-oro"
-        >
+        <button onClick={duplicar} className="btn-oro">
           Duplicar para {anio}
         </button>
       </div>
     </Modal>
+  )
+}
+
+// =============================================================
+//  NOMBRE OBLIGATORIO CUANDO YA HAY UNA PROCESION ESE DIA
+// =============================================================
+
+function existeMismoDia(existentes, tipo, anio) {
+  return existentes.some((p) => p.tipo === tipo && Number(p.anio) === Number(anio))
+}
+
+// Devuelve el texto del error, o '' si el nombre vale
+function validarNombrePersonalizado(nombre, nombrePorDefecto, existentes) {
+  const limpio = normalizar(nombre)
+  if (!limpio) return 'Ponle un nombre a la nueva procesión para distinguirla de la que ya existe.'
+  if (limpio === normalizar(nombrePorDefecto)) {
+    return `"${nombrePorDefecto}" es el nombre por defecto. Escribe uno personalizado.`
+  }
+  if (existentes.some((p) => normalizar(p.nombre) === limpio)) {
+    return `Ya hay una procesión llamada "${nombre.trim()}". Elige otro nombre.`
+  }
+  return ''
+}
+
+function CampoNombreObligatorio({ tipoNombre, anio, nombre, onCambiar }) {
+  return (
+    <div className="space-y-3">
+      <Alerta tipo="aviso">
+        Ya existe una procesión de <b>{tipoNombre}</b> en {anio}. Para crear
+        otra tienes que darle un <b>nombre diferente</b>.
+      </Alerta>
+      <div>
+        <label className="label">Nombre de la nueva procesión *</label>
+        <input
+          className="input" autoFocus required
+          placeholder={`Ej.: ${tipoNombre} ${anio} · Traslado`}
+          value={nombre} onChange={(e) => onCambiar(e.target.value)}
+        />
+      </div>
+    </div>
   )
 }
