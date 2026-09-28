@@ -121,14 +121,16 @@ export default function ProcesionDetalle() {
             {procesion.nombre}
             <span className={`chip ${estado.chip}`}>{estado.nombre}</span>
           </h1>
-          <p className="text-slate-500 text-sm mt-1">
+          <p className="text-slate-500 text-sm mt-1 flex items-center gap-3 flex-wrap">
             {tipo.nombre} · {procesion.anio}
             {!soloLectura && (
               <button
                 onClick={() => setModalDatos(true)}
-                className="ml-2 text-oro-dark hover:underline text-xs"
+                className="inline-flex items-center gap-1.5 rounded-full border border-oro
+                           bg-oro/15 px-3 py-1 text-xs font-semibold text-oro-dark shadow-sm
+                           transition hover:bg-oro hover:text-morado-dark"
               >
-                editar datos
+                ✏️ Editar datos
               </button>
             )}
           </p>
