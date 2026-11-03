@@ -1,0 +1,116 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  html { -webkit-text-size-adjust: 100%; }
+
+  body {
+    @apply font-sans text-crema antialiased;
+    margin: 0;
+    background-color: #0c0209;
+  }
+
+  /* -----------------------------------------------------------
+     El fondo va en un div fijo, NO en el body.
+     Con background-attachment:fixed el iPhone estira la foto a
+     la altura de todo el documento, y el velo se cortaba en las
+     paginas largas (el cuadrante entero mide varias pantallas).
+     ----------------------------------------------------------- */
+  #fondo {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    background-color: #0c0209;
+    background-image: url('/cristo_agonia.jpg');
+    background-size: cover;
+    background-position: center top;
+    background-repeat: no-repeat;
+    pointer-events: none;
+  }
+
+  @media (min-width: 900px) {
+    #fondo { background-position: center 30%; }
+  }
+
+  /* Velo oscuro para que el texto se lea sobre la foto */
+  #fondo::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      180deg,
+      rgba(12, 2, 9, 0.74) 0%,
+      rgba(12, 2, 9, 0.90) 55%,
+      rgba(12, 2, 9, 0.96) 100%
+    );
+  }
+
+  #raiz { position: relative; z-index: 1; }
+}
+
+@layer components {
+  /* --- Contenedor tipo folio, como en el portal antiguo --- */
+  .folio {
+    @apply mx-auto w-full max-w-3xl bg-morado-deep/85 backdrop-blur-sm
+           border border-oro/25 rounded-xl shadow-2xl shadow-black/60
+           overflow-clip;
+  }
+
+  .seccion {
+    @apply px-3.5 py-4 sm:px-7 sm:py-6;
+  }
+
+  .titulo {
+    @apply font-titulo font-bold uppercase tracking-wide text-oro-light;
+  }
+
+  /* --- Pestañas --- */
+  .pestana {
+    @apply flex-1 min-w-[110px] rounded-lg border border-morado-light/40
+           bg-transparent px-3 py-2.5 text-center text-[13px] font-bold uppercase
+           tracking-wide text-oro-light/60 transition-colors duration-200
+           cursor-pointer select-none hover:text-oro-light hover:border-oro/40;
+  }
+  .pestana-activa {
+    @apply border-oro bg-oro text-morado-black hover:text-morado-black;
+  }
+
+  /* --- Botones --- */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5
+           text-sm font-bold transition-colors duration-200 cursor-pointer
+           disabled:opacity-40 disabled:cursor-not-allowed select-none;
+  }
+  .btn-oro { @apply btn bg-oro text-morado-black hover:bg-oro-light; }
+  .btn-linea {
+    @apply btn border border-oro/40 text-oro-light hover:bg-oro/10;
+  }
+
+  /* --- Campo de busqueda --- */
+  .campo {
+    @apply w-full rounded-lg border border-morado-light/50 bg-morado-black/70
+           px-4 py-3 text-base text-crema placeholder-oro-light/30
+           outline-none transition focus:border-oro focus:ring-2 focus:ring-oro/20;
+  }
+
+  /* --- Tarjetas --- */
+  .tarjeta {
+    @apply rounded-lg border border-oro/20 bg-morado-dark/60 p-4;
+  }
+
+  .etiqueta {
+    @apply text-[11px] font-bold uppercase tracking-[0.12em] text-oro-light/50;
+  }
+}
+
+::-webkit-scrollbar { width: 9px; height: 9px; }
+::-webkit-scrollbar-track { background: #1a0514; }
+::-webkit-scrollbar-thumb { background: #4F1243; border-radius: 5px; }
+::-webkit-scrollbar-thumb:hover { background: #7a1b67; }
+
+/* Tiras que se deslizan en horizontal (pestañas, turnos) sin barra visible */
+.sin-barra { scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+.sin-barra::-webkit-scrollbar { display: none; }

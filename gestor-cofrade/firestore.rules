@@ -126,18 +126,31 @@ service cloud.firestore {
     }
 
     // ---------- PROCESIONES ----------
-    // Lectura publica SOLO si esta publicada (web de costaleros).
+    // Nunca son publicas, ni publicadas. La web de costaleros lee
+    // una copia limpia en /portal (mas abajo).
     match /procesiones/{id} {
-      allow read: if puedeVer() || resource.data.publicado == true;
+      allow read: if puedeVer();
       allow create, update: if puedeEditar();
       allow delete: if puedeAdmin();
     }
 
     // ---------- CALENDARIO ----------
-    // Publico en lectura: los costaleros ven los ensayos convocados.
     match /calendario/{id} {
-      allow read: if true;
+      allow read: if puedeVer();
       allow write: if puedeEditar();
+    }
+
+    // ---------- WEB DE COSTALEROS ----------
+    // Un unico documento cuyo id es la clave derivada del codigo de
+    // acceso (64 caracteres hexadecimales, ver src/lib/portal.js).
+    //
+    //   get  -> cualquiera: si conoces el codigo, conoces el id.
+    //   list -> NADIE, ni los cuadrilleros. Asi no hay forma de
+    //           descubrir el id sin saber el codigo.
+    match /portal/{clave} {
+      allow get: if clave.size() == 64;
+      allow list: if false;
+      allow create, update, delete: if puedeEditar();
     }
 
     // ---------- ENSAYOS ----------
@@ -161,8 +174,11 @@ service cloud.firestore {
     }
 
     // ---------- CONFIGURACION ----------
+    // /config/portal guarda el codigo de la web en claro: solo lo ven
+    // los cuadrilleros (cualquiera puede crearse una cuenta de Auth sin
+    // licencia, asi que "autenticado" no basta).
     match /config/{doc} {
-      allow read: if autenticado();
+      allow read: if doc == 'portal' ? puedeEditar() : autenticado();
       // El limite de cuadrilleros solo lo toca el supremo
       allow write: if doc == 'general' ? esSupremo() : puedeEditar();
     }

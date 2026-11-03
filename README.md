@@ -12,7 +12,8 @@ Magdalena**, de la M.I. Mayordomía de Ntro. Padre Jesús Nazareno de Orihuela.
 ## Qué hay en este repositorio
 
 ```
-gestor-cofrade/        Aplicación web actual (React + Firebase)
+gestor-cofrade/        Panel de cuadrilleros (React + Firebase)
+web-costaleros/        Portal público del costalero (React + Firebase)
 *.py                   Programa antiguo de escritorio (Python + Tkinter)
 ```
 
@@ -95,9 +96,23 @@ los cambios en vivo. El bloqueo caduca solo a los 3 minutos.
 
 ---
 
+## El portal del costalero
+
+En `web-costaleros/` vive la web pública: el costalero busca su nombre y ve su
+orden procesional tramo a tramo, su puesto en la vara, el cuadrante completo, el
+recorrido con la normativa y los próximos ensayos. No pide cuenta ninguna.
+
+Es una aplicación aparte, pero **no duplica los algoritmos**: lee los módulos de
+cálculo del panel a través del alias `@nucleo`. Los detalles están en
+[`web-costaleros/README.md`](web-costaleros/README.md).
+
+Solo muestra las procesiones marcadas como publicadas. Mientras el cuadrillero
+no pulse *Publicar*, ahí no aparece nada.
+
+---
+
 ## Pendiente
 
-- [ ] Módulo de publicación
-- [ ] Web pública de costaleros
+- [ ] Botón de publicar en la pestaña Publicar (hoy solo revisa el cuadrante)
 - [ ] Mapa del recorrido con Leaflet
-- [ ] Vista adaptada a móvil para el día de la procesión
+- [ ] Desplegar los dos sitios en Firebase Hosting

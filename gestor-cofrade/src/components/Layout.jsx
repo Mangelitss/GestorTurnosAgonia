@@ -12,6 +12,7 @@ const MENU = [
   { to: '/procesiones', label: 'Procesiones', icono: '✝️', permiso: P.PROC_VER },
   { to: '/ensayos', label: 'Ensayos', icono: '📋', permiso: P.ENSAYOS_VER },
   { to: '/calendario', label: 'Calendario', icono: '📅', permiso: P.CAL_VER },
+  { to: '/publicacion', label: 'Web costaleros', icono: '🌐', permiso: P.PROC_PUBLICAR },
   { to: '/licencias', label: 'Cuadrilleros', icono: '🔑', permiso: P.LIC_VER },
 ]
 

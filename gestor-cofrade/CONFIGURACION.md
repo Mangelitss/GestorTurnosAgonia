@@ -338,15 +338,24 @@ en un aviso arriba.
 
 ---
 
-## Desplegar en internet (cuando esté listo)
+## Desplegar en internet
+
+El panel tiene su propio sitio de hosting, **https://cuadrilleros-agonia.web.app**,
+ya configurado en `firebase.json` (`"site": "cuadrilleros-agonia"`).
 
 ```bash
-npm install -g firebase-tools
-firebase login
-firebase init hosting     # carpeta pública: dist
-npm run build
-firebase deploy
+npm install -g firebase-tools   # solo la primera vez
+firebase login                  # solo la primera vez
+npm run deploy
 ```
+
+> ⚠️ No uses `firebase init hosting` ni quites el campo `site`: el panel se
+> desplegaría en el sitio principal del proyecto y podría pisar la web de
+> costaleros (`web-costaleros/`), que tiene su propio sitio.
+
+El dominio `cuadrilleros-agonia.web.app` tiene que estar en
+**Authentication → Configuración → Dominios autorizados**, o el inicio de sesión
+fallará.
 
 ---
 

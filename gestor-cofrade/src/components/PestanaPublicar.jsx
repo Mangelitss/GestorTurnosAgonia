@@ -4,6 +4,7 @@
 // =============================================================
 
 import { useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { reordenarTramos } from '../lib/procesiones'
 import { cargaPorCostalero, describirPosicion, ordenProcesional } from '../lib/conflictos'
 import { ocupantes } from '../lib/cuadrante'
@@ -88,9 +89,9 @@ export default function PestanaPublicar({
       </div>
 
       <Alerta tipo="info">
-        La publicación en la web se hará desde un <b>módulo aparte</b> del programa.
-        Aquí solo se revisa el cuadrante y se preparan los textos.
-        El botón de PDF se queda de momento hasta que montemos ese módulo.
+        Aquí se revisa el cuadrante y se preparan los textos. Para sacarlo en la web
+        de costaleros, con la hora de citación y los avisos, ve a{' '}
+        <Link to="/publicacion" className="font-semibold underline">Web costaleros</Link>.
       </Alerta>
 
       {/* ---- Revisiones ---- */}
