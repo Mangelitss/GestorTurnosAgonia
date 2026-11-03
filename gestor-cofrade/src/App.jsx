@@ -16,6 +16,7 @@ import Ensayos from './pages/Ensayos'
 import EnsayoDetalle from './pages/EnsayoDetalle'
 import Procesiones from './pages/Procesiones'
 import ProcesionDetalle from './pages/ProcesionDetalle'
+import Publicacion from './pages/Publicacion'
 
 export default function App() {
   const { autenticado, cargando } = useAuth()
@@ -70,6 +71,11 @@ export default function App() {
         <Route
           path="/calendario"
           element={<Protegida permiso={P.CAL_VER}><Calendario /></Protegida>}
+        />
+
+        <Route
+          path="/publicacion"
+          element={<Protegida permiso={P.PROC_PUBLICAR}><Publicacion /></Protegida>}
         />
 
         <Route path="*" element={<Navigate to="/" replace />} />

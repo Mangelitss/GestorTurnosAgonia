@@ -39,4 +39,5 @@ export const COL = {
   CALENDARIO: 'calendario',
   ENSAYOS: 'ensayos',
   CONFIG: 'config',
+  PORTAL: 'portal',
 }

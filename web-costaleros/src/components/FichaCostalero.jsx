@@ -14,7 +14,7 @@ import { PIEZAS } from '@nucleo/constantes'
 import CuadranteTurno from './CuadranteTurno'
 import { Rotulo } from './ui'
 
-export default function FichaCostalero({ procesion, persona, onCambiar }) {
+export default function FichaCostalero({ procesion, persona, marcas = {}, onCambiar }) {
   const [verCuadrante, setVerCuadrante] = useState(false)
 
   const { orden, resumen, puestos, nota } = useMemo(() => {
@@ -124,6 +124,7 @@ export default function FichaCostalero({ procesion, persona, onCambiar }) {
                     turno={turno}
                     pieza={p.pieza}
                     resaltarId={persona.id}
+                    marcas={marcas}
                   />
                 )
               })}

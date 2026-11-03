@@ -7,11 +7,14 @@
 import { tramosOrdenados } from '@nucleo/conflictos'
 import { FASES, PIEZAS } from '@nucleo/constantes'
 import { Rotulo, Vacio } from './ui'
+import { TenerEnCuenta } from './InfoPublicacion'
 
 export default function Recorrido({ procesion }) {
   const tramos = tramosOrdenados(procesion.tramos || [])
 
-  if (tramos.length === 0 && !procesion.normativa) {
+  const tenerEnCuenta = procesion.info?.tener_en_cuenta
+
+  if (tramos.length === 0 && !procesion.normativa && !tenerEnCuenta) {
     return <Vacio icono="—" titulo="Sin recorrido publicado" texto="El cuadrillero aún no ha definido los tramos." />
   }
 
@@ -24,6 +27,8 @@ export default function Recorrido({ procesion }) {
 
   return (
     <div className="animate-subir space-y-8">
+      <TenerEnCuenta texto={tenerEnCuenta} />
+
       {porFase.map(({ fase, lista }) => (
         <div key={fase.id}>
           <Rotulo>{fase.icono} {fase.nombre}</Rotulo>

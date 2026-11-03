@@ -1,82 +1,71 @@
 // =============================================================
-//  LECTURA PUBLICA DE DATOS
+//  LECTURA DEL PORTAL
 //
-//  Todo lo de aqui funciona SIN iniciar sesion. Las reglas solo
-//  permiten:
-//    - /procesiones  con  publicado == true
-//    - /calendario   entero
+//  Todo sale de un unico documento:  /portal/{clave}
+//  donde la clave se calcula a partir del codigo que teclea el
+//  costalero (ver gestor-cofrade/src/lib/portal.js).
+//
+//  Si el codigo esta mal, o el cuadrillero ha ocultado la web,
+//  el documento no existe. Las dos cosas se ven igual a proposito:
+//  la web no da pistas de si el codigo era bueno.
 // =============================================================
 
-import { collection, getDocs, query, where } from 'firebase/firestore'
+import { doc, getDoc } from 'firebase/firestore'
 import { db, COL } from './firebase'
 import { ocupantes } from '@nucleo/cuadrante'
-import { hoyIso } from './texto'
+import { claveDeCodigo, esClaveValida, limpiarNombre } from '@nucleo/portal'
 
-// -------------------------------------------------------------
-//  PROCESIONES PUBLICADAS
-//  La condicion  where('publicado','==',true)  no es un adorno:
-//  las reglas exigen que la consulta se limite a lo publicado,
-//  si no Firestore la rechaza entera.
-// -------------------------------------------------------------
-export async function leerProcesionesPublicadas() {
-  const c = query(collection(db, COL.PROCESIONES), where('publicado', '==', true))
-  const snap = await getDocs(c)
+export { limpiarNombre }
 
-  return snap.docs
-    .map((d) => ({ id: d.id, ...d.data() }))
-    .sort((a, b) =>
-      (b.anio || 0) - (a.anio || 0) ||
-      String(a.fecha_iso || '').localeCompare(String(b.fecha_iso || ''))
-    )
+// Devuelve el portal, o null si no existe
+export async function leerPortal(clave) {
+  if (!esClaveValida(clave)) return null
+  const snap = await getDoc(doc(db, COL.PORTAL, clave))
+  return snap.exists() ? snap.data() : null
+}
+
+// Comprueba un codigo. Devuelve { clave, portal } o null.
+export async function entrarConCodigo(codigo) {
+  const clave = await claveDeCodigo(codigo)
+  const portal = await leerPortal(clave)
+  return portal ? { clave, portal } : null
 }
 
 // -------------------------------------------------------------
-//  CONVOCATORIAS DEL CALENDARIO (de hoy en adelante)
+//  SE RECUERDA LA CLAVE (nunca el codigo) EN ESTE MOVIL
 // -------------------------------------------------------------
-export async function leerConvocatorias() {
-  const snap = await getDocs(collection(db, COL.CALENDARIO))
-  const hoy = hoyIso()
+const CLAVE_ACCESO = 'agonia.acceso'
 
-  return snap.docs
-    .map((d) => ({ id: d.id, ...d.data() }))
-    .filter((e) => e.fecha_iso && e.fecha_iso >= hoy)
-    .sort((a, b) =>
-      a.fecha_iso.localeCompare(b.fecha_iso) ||
-      String(a.hora || '').localeCompare(String(b.hora || ''))
-    )
+export function claveRecordada() {
+  try { return localStorage.getItem(CLAVE_ACCESO) || null } catch { return null }
+}
+
+export function recordarClave(clave) {
+  try {
+    clave ? localStorage.setItem(CLAVE_ACCESO, clave) : localStorage.removeItem(CLAVE_ACCESO)
+  } catch { /* modo privado */ }
 }
 
 // -------------------------------------------------------------
-//  CENSO IMPLICITO DE UNA PROCESION
-//
-//  El censo real nunca es publico. Pero los nombres de quienes
-//  salen ya viajan dentro del cuadrante publicado, asi que la
-//  lista de costaleros se saca de ahi y no de /costaleros.
+//  QUIEN SALE EN UNA PUBLICACION
+//  El censo real nunca es publico: la lista sale del cuadrante.
 // -------------------------------------------------------------
-export function personasDe(procesion) {
+export function cuadrantesDe(pub) {
+  if (!pub) return []
+  if (pub.clase === 'ensayo') return [pub.cuadrante]
+  return [pub.cuadrante_trono, pub.lleva_cruz ? pub.cuadrante_cruz : null]
+}
+
+export function personasDe(pub) {
   const mapa = new Map()
 
-  ;[procesion?.cuadrante_trono, procesion?.cuadrante_cruz].forEach((cuadrante) => {
+  cuadrantesDe(pub).forEach((cuadrante) => {
     if (!cuadrante) return
     ocupantes(cuadrante).forEach(({ p }) => {
-      if (!p?.costalero_id) return
-      if (!mapa.has(p.costalero_id)) {
-        mapa.set(p.costalero_id, {
-          id: p.costalero_id,
-          nombre: limpiarNombre(p.nombre),
-          altura: p.altura || 0,
-        })
-      }
+      if (!p?.costalero_id || mapa.has(p.costalero_id)) return
+      mapa.set(p.costalero_id, { id: p.costalero_id, nombre: limpiarNombre(p.nombre) })
     })
   })
 
   return [...mapa.values()].sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'))
-}
-
-// El generador marca a los repetidores con "(R)". Para el costalero
-// eso es ruido: se ve en el cuadrante, no hace falta en su nombre.
-export function limpiarNombre(nombre) {
-  return String(nombre || '')
-    .replace(/\s*\((R|C|C-Doble)\)\s*/gi, ' ')
-    .trim()
 }

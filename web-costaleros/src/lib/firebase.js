@@ -3,8 +3,9 @@
 //
 //  Es el mismo proyecto que usa el panel de cuadrilleros. Estos
 //  identificadores no son secretos: quien protege los datos son
-//  las reglas de firestore.rules, que solo dejan leer sin cuenta
-//  las procesiones con  publicado == true  y el calendario.
+//  las reglas de firestore.rules, que sin cuenta solo dejan leer
+//  UN documento de /portal, y solo si se sabe su id (que sale del
+//  codigo de acceso). Ni procesiones, ni ensayos, ni censo.
 //
 //  Aqui NO se importa firebase/auth a proposito: el portal nunca
 //  inicia sesion, asi el paquete queda mas ligero y no hay forma
@@ -26,6 +27,5 @@ const firebaseConfig = {
 export const db = getFirestore(initializeApp(firebaseConfig))
 
 export const COL = {
-  PROCESIONES: 'procesiones',
-  CALENDARIO: 'calendario',
+  PORTAL: 'portal',
 }

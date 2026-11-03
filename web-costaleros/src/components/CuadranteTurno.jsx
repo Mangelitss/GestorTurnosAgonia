@@ -1,15 +1,18 @@
 // =============================================================
 //  UN TURNO COMPLETO
 //
-//  Se dibuja como se ve de verdad: cada vara con su gente de
-//  delante, la pieza en medio, y su gente de detras. En movil
-//  las varas se apilan; en pantalla ancha van en columnas.
+//  Se dibuja como se ve de verdad desde arriba: las varas una al
+//  lado de otra, la gente de delante, la pieza en medio y la gente
+//  de detras. Tambien en el movil: asi un turno cabe en una
+//  pantalla y cada uno se situa de un vistazo. Los nombres largos
+//  se parten en dos lineas en vez de recortarse.
 // =============================================================
 
 import { PIEZAS } from '@nucleo/constantes'
 import { limpiarNombre } from '../lib/datos'
+import { ESTILO_MARCA } from './Leyenda'
 
-export default function CuadranteTurno({ turno, pieza = 'trono', resaltarId = null }) {
+export default function CuadranteTurno({ turno, pieza = 'trono', resaltarId = null, marcas = {} }) {
   if (!turno) return null
 
   const info = PIEZAS[pieza]
@@ -22,17 +25,14 @@ export default function CuadranteTurno({ turno, pieza = 'trono', resaltarId = nu
 
   return (
     <div className="overflow-hidden rounded-lg border border-oro/25">
-      <h3 className="bg-morado px-4 py-2.5 text-center font-titulo text-sm font-bold
+      <h3 className="bg-morado px-3 py-2.5 text-center font-titulo text-sm font-bold
                      uppercase tracking-[0.15em] text-crema">
-        {info.icono} {pieza === 'cruz' ? 'Cruz Guía' : 'Trono'} · Turno {turno.id}
+        {pieza === 'cruz' ? 'Cruz Guía' : 'Trono'} · Turno {turno.id}
       </h3>
 
-      {/* La cruz lleva 2 varas y el trono 3: si se fija a 3 columnas,
-          la cruz deja un hueco vacio a la derecha. */}
       <div
-        className={`grid gap-px bg-oro/15 ${
-          varas.length === 2 ? 'sm:grid-cols-2' : 'sm:grid-cols-3'
-        }`}
+        className="grid gap-px bg-oro/15"
+        style={{ gridTemplateColumns: `repeat(${varas.length}, minmax(0, 1fr))` }}
       >
         {varas.map((vara) => (
           <Vara
@@ -41,6 +41,7 @@ export default function CuadranteTurno({ turno, pieza = 'trono', resaltarId = nu
             secciones={turno.varas[vara]}
             pieza={pieza}
             resaltarId={resaltarId}
+            marcas={marcas}
           />
         ))}
       </div>
@@ -48,33 +49,37 @@ export default function CuadranteTurno({ turno, pieza = 'trono', resaltarId = nu
   )
 }
 
-function Vara({ nombre, secciones, pieza, resaltarId }) {
+// "Izquierda" -> "Izq." en pantallas estrechas
+const CORTO = { Izquierda: 'Izq.', Centro: 'Centro', Derecha: 'Der.' }
+
+function Vara({ nombre, secciones, pieza, resaltarId, marcas }) {
   const delante = secciones?.Delante || []
   const detras = secciones?.Detras || []
 
   return (
-    <div className="bg-morado-deep/80 p-3">
-      <h4 className="mb-2.5 border-b-2 border-oro/50 pb-1.5 text-center font-titulo
-                     text-[11px] font-bold uppercase tracking-[0.15em] text-oro-light">
-        Vara {nombre}
+    <div className="min-w-0 bg-morado-deep/90 p-1.5 sm:p-3">
+      <h4 className="mb-1.5 border-b-2 border-oro/50 pb-1 text-center font-titulo
+                     text-[10px] font-bold uppercase tracking-[0.1em] text-oro-light sm:text-[11px]">
+        <span className="sm:hidden">{CORTO[nombre] || nombre}</span>
+        <span className="hidden sm:inline">Vara {nombre}</span>
       </h4>
 
       {delante.length > 0 && (
         <>
-          <Franja>▲ Delante ▲</Franja>
-          <Lista gente={delante} resaltarId={resaltarId} />
+          <Franja>▲ Delante</Franja>
+          <Lista gente={delante} resaltarId={resaltarId} marcas={marcas} />
         </>
       )}
 
-      <div className="my-2 rounded bg-morado px-2 py-1 text-center text-[10px]
-                      font-bold uppercase tracking-[0.2em] text-oro-light">
-        ▼ {pieza === 'cruz' ? 'Cruz' : 'Trono'} ▼
+      <div className="my-1.5 rounded bg-morado px-1 py-1 text-center text-[9px]
+                      font-bold uppercase tracking-[0.15em] text-oro-light sm:text-[10px]">
+        {pieza === 'cruz' ? 'Cruz' : 'Trono'}
       </div>
 
       {detras.length > 0 && (
         <>
-          <Lista gente={detras} resaltarId={resaltarId} />
-          <Franja>▼ Detrás ▼</Franja>
+          <Lista gente={detras} resaltarId={resaltarId} marcas={marcas} />
+          <Franja>▼ Detrás</Franja>
         </>
       )}
     </div>
@@ -83,14 +88,14 @@ function Vara({ nombre, secciones, pieza, resaltarId }) {
 
 function Franja({ children }) {
   return (
-    <div className="my-1.5 rounded bg-morado-dark/80 px-2 py-1 text-center text-[10px]
-                    font-bold uppercase tracking-[0.15em] text-oro-light/60">
+    <div className="my-1 rounded bg-morado-dark/80 px-1 py-0.5 text-center text-[9px]
+                    font-bold uppercase tracking-[0.1em] text-oro-light/60 sm:text-[10px]">
       {children}
     </div>
   )
 }
 
-function Lista({ gente, resaltarId }) {
+function Lista({ gente, resaltarId, marcas }) {
   return (
     <ul className="space-y-1">
       {gente.map((p, i) => {
@@ -98,32 +103,30 @@ function Lista({ gente, resaltarId }) {
           return (
             <li
               key={i}
-              className="rounded border border-dashed border-morado-light/40 px-2 py-1.5
-                         text-center text-[11px] italic text-oro-light/25"
+              className="flex min-h-[34px] items-center justify-center rounded border border-dashed
+                         border-morado-light/40 px-1 text-center text-[10px] italic text-oro-light/25"
             >
-              hueco libre
+              libre
             </li>
           )
         }
 
         const yo = resaltarId && p.costalero_id === resaltarId
+        const marca = ESTILO_MARCA[marcas[p.costalero_id]]
 
         return (
           <li
             key={i}
-            className={`flex items-center justify-between gap-2 rounded border px-2 py-1.5
-                        text-[11px] transition-colors ${
+            className={`flex min-h-[34px] items-center rounded border px-1.5 py-1 text-[11px]
+                        leading-tight sm:px-2 sm:text-xs ${
                           yo
                             ? 'border-oro bg-oro text-morado-black font-extrabold shadow-lg shadow-oro/20'
-                            : 'border-morado-light/30 bg-morado-black/50 text-crema/90'
+                            : marca || 'border-morado-light/30 bg-morado-black/50 text-crema/90'
                         }`}
           >
-            <span className="truncate font-semibold">{limpiarNombre(p.nombre)}</span>
-            {p.altura > 0 && (
-              <span className={`shrink-0 text-[9px] font-bold ${yo ? 'opacity-70' : 'opacity-40'}`}>
-                {p.altura}
-              </span>
-            )}
+            <span className="min-w-0 break-words font-semibold [hyphens:auto]" lang="es">
+              {limpiarNombre(p.nombre)}
+            </span>
           </li>
         )
       })}

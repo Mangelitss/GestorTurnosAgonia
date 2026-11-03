@@ -3,7 +3,9 @@
 @tailwind utilities;
 
 @layer base {
-  * { box-sizing: border-box; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  html { -webkit-text-size-adjust: 100%; }
 
   body {
     @apply font-sans text-crema antialiased;
@@ -54,11 +56,11 @@
   .folio {
     @apply mx-auto w-full max-w-3xl bg-morado-deep/85 backdrop-blur-sm
            border border-oro/25 rounded-xl shadow-2xl shadow-black/60
-           overflow-hidden;
+           overflow-clip;
   }
 
   .seccion {
-    @apply px-5 py-5 sm:px-7 sm:py-6;
+    @apply px-3.5 py-4 sm:px-7 sm:py-6;
   }
 
   .titulo {
@@ -108,3 +110,7 @@
 ::-webkit-scrollbar-track { background: #1a0514; }
 ::-webkit-scrollbar-thumb { background: #4F1243; border-radius: 5px; }
 ::-webkit-scrollbar-thumb:hover { background: #7a1b67; }
+
+/* Tiras que se deslizan en horizontal (pestañas, turnos) sin barra visible */
+.sin-barra { scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+.sin-barra::-webkit-scrollbar { display: none; }

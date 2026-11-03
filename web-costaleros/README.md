@@ -3,22 +3,46 @@
 Web pública del **Tercio del Santísimo Cristo de la Agonía y María Magdalena**.
 Aquí entra el costalero, busca su nombre y ve lo que le toca.
 
-No pide cuenta ni contraseña: solo muestra lo que el cuadrillero ha publicado
-desde el panel.
+No pide cuenta: se entra con el **código del tercio**, que elige y cambia el
+cuadrillero desde el panel (menú **Web costaleros**). Solo muestra lo que se ha
+publicado allí, y solo mientras la web esté visible.
 
 ---
 
 ## Qué ve el costalero
 
+Una pestaña por cada cosa publicada: Miércoles, Viernes, extraordinarias y ensayos.
+En cada una, arriba los avisos, la hora y el lugar de citación, la salida y lo que
+hay que tener en cuenta. Debajo:
+
 | Apartado | Qué muestra |
 |---|---|
-| **Lo mío** | Tramo a tramo: cuándo carga, con qué turno y qué pieza, y cuándo descansa con qué cometido. Su puesto exacto en la vara y la nota personal del cuadrillero. |
-| **Cuadrante** | Todos los turnos del trono y de la cruz, con su nombre resaltado en dorado. |
-| **Recorrido** | Los tramos de ida y regreso con sus indicaciones, y la normativa de la cuadrilla. |
-| **Ensayos** | Las próximas convocatorias del calendario. |
+| **Búscate / Lo mío** | Tramo a tramo: cuándo carga, con qué turno y qué pieza, y cuándo descansa con qué cometido. Su puesto exacto en la vara y la nota personal del cuadrillero. En un ensayo, su turno y su puesto. |
+| **Cuadrante** | Todos los turnos con colores (repite trono, repite cruz, trono y cruz) y su leyenda. Su nombre, resaltado en dorado. |
+| **Recorrido** | Los tramos de ida y regreso, de dónde a dónde, qué turno carga cada uno y la normativa. |
 
-La web recuerda quién eres en el móvil (`localStorage`), así que la segunda vez
-que entras vas directo a tu ficha. El botón **No soy yo** lo olvida.
+La web recuerda en el móvil la clave de acceso (nunca el código) y tu nombre.
+**No soy yo** olvida el nombre; **Salir de este móvil**, el acceso.
+
+---
+
+## Cómo se protege
+
+- Lo publicado **no** se lee de `/procesiones` ni `/ensayos`, que ya no son
+  públicas. Al publicar, el panel hace una copia limpia en un único documento
+  `/portal/{clave}`, donde `clave = PBKDF2(código)`.
+- Las reglas dejan **leer** ese documento por su id, pero **nadie puede listar**
+  la colección. Sin el código no hay forma de dar con él.
+- La copia solo lleva nombres, puestos, tramos y textos. Ni alturas, ni hombros,
+  ni teléfonos, ni ids del censo (se cambian por `p1`, `p2`...).
+- **Cambiar el código** borra la copia vieja: el código anterior deja de valer al
+  instante. **Ocultar la web** también la borra: no queda nada que leer.
+- El código en claro solo está en `/config/portal`, que solo pueden leer los
+  cuadrilleros.
+- Tras tres fallos seguidos, la pantalla de acceso hace esperar cada vez más.
+
+El código es tan fuerte como lo que se elija: el panel admite de 3 a 20
+caracteres. Uno corto se adivina probando; cuanto más largo, más seguro.
 
 ---
 
@@ -59,18 +83,15 @@ rastreo de clases. Si se quita, los chips de turnos salen sin estilo.
 
 ## De dónde salen los datos
 
-Todo se lee de Firestore sin iniciar sesión. Las reglas
-(`../gestor-cofrade/firestore.rules`) solo dejan leer sin cuenta:
+Una sola lectura: `getDoc(/portal/{clave})`. Nada más es legible sin cuenta.
 
-- `/procesiones` **con `publicado == true`** — por eso la consulta lleva
-  siempre ese `where`: sin él, Firestore rechaza la consulta entera.
-- `/calendario` — para las convocatorias.
+La copia la genera el panel cada vez que se publica, se retira o se cambia la
+información de algo publicado. Si se toca una procesión ya publicada (turnos,
+tramos…), el módulo **Web costaleros** avisa de *cambios sin subir* y ofrece
+el botón **Subir cambios**.
 
-El censo (`/costaleros`) **nunca** es público. Los nombres que se ven salen del
-cuadrante ya publicado, no del censo.
-
-Mientras el cuadrillero no pulse *Publicar*, la procesión no existe para esta
-web.
+El cálculo de la clave y la copia limpia viven en
+`../gestor-cofrade/src/lib/portal.js`, compartido por el alias `@nucleo`.
 
 ---
 
@@ -88,24 +109,26 @@ firebase login
 firebase use gestorturnosagonia
 ```
 
-La configuración de hosting ya está en `firebase.json`, con la carpeta `dist`
-y el rewrite a `index.html`.
+La configuración de hosting ya está en `firebase.json`, con la carpeta `dist`,
+el rewrite a `index.html` y el sitio `costaleros-agonia`.
 
-> El panel de cuadrilleros y este portal son dos sitios distintos del mismo
-> proyecto. Si despliegas los dos, usa
-> [targets de hosting](https://firebase.google.com/docs/hosting/multisites)
-> para no pisar uno con otro.
+Queda en **https://costaleros-agonia.web.app**. Es el enlace que muestra el
+panel en **Web costaleros**; si cambia de dominio, se corrige allí con *Cambiar*.
+
+| Web | Sitio de hosting | Carpeta |
+|---|---|---|
+| Costaleros | https://costaleros-agonia.web.app | `web-costaleros/` |
+| Cuadrilleros (panel) | https://cuadrilleros-agonia.web.app | `gestor-cofrade/` |
+
+Cada carpeta despliega solo en su sitio (campo `site` de su `firebase.json`),
+así que una nunca pisa a la otra. Las reglas de Firestore se publican desde el
+panel: `npm run deploy:reglas` en `gestor-cofrade/`.
 
 ---
 
 ## Aviso sobre datos personales
 
-Esta web es **pública y sin identificación**: cualquiera con el enlace ve los
-nombres de todo el tercio y quién va en cada puesto. Es una decisión tomada a
-propósito, y es la misma que tenía el portal anterior.
+Quien tenga el código ve los nombres de todo el tercio y quién va en cada
+puesto. Nada más: ni teléfonos, ni alturas, ni ningún otro campo del censo.
 
-Lo que **no** sale: teléfonos, ni ningún campo del censo más allá del nombre y
-la altura de hombro que ya viajan dentro del cuadrante.
-
-Si algún día hiciera falta cerrarla, la vía más corta es pedir un código por
-costalero antes de mostrar nada.
+Si el código se filtra, se cambia en el panel y el antiguo deja de servir.
