@@ -8,10 +8,10 @@ import {
   leerProcesiones, crearProcesion, borrarProcesion,
   procesionVacia, duplicarEstructura,
   asegurarProcesionesDelAnio, marcarBorrada, separarPorAnio, TIPOS_AUTOMATICOS,
+  existeMismoDia, validarNombrePersonalizado,
 } from '../lib/procesiones'
 import { TIPOS_PROCESION, ESTADOS_PROCESION, PRESETS_PROCESION } from '../lib/constantes'
 import { ocupantes } from '../lib/cuadrante'
-import { normalizar } from '../lib/censo'
 import { P } from '../lib/roles'
 import { useAuth } from '../context/AuthContext'
 import { Page, PageHeader, Cargando, Vacio, Modal, Alerta, Toast } from '../components/ui'
@@ -506,23 +506,6 @@ function ModalDuplicar({ origen, existentes, onCerrar, onCrear }) {
 // =============================================================
 //  NOMBRE OBLIGATORIO CUANDO YA HAY UNA PROCESION ESE DIA
 // =============================================================
-
-function existeMismoDia(existentes, tipo, anio) {
-  return existentes.some((p) => p.tipo === tipo && Number(p.anio) === Number(anio))
-}
-
-// Devuelve el texto del error, o '' si el nombre vale
-function validarNombrePersonalizado(nombre, nombrePorDefecto, existentes) {
-  const limpio = normalizar(nombre)
-  if (!limpio) return 'Ponle un nombre a la nueva procesión para distinguirla de la que ya existe.'
-  if (limpio === normalizar(nombrePorDefecto)) {
-    return `"${nombrePorDefecto}" es el nombre por defecto. Escribe uno personalizado.`
-  }
-  if (existentes.some((p) => normalizar(p.nombre) === limpio)) {
-    return `Ya hay una procesión llamada "${nombre.trim()}". Elige otro nombre.`
-  }
-  return ''
-}
 
 function CampoNombreObligatorio({ tipoNombre, anio, nombre, onCambiar }) {
   return (

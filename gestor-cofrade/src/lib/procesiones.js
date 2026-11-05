@@ -31,6 +31,7 @@ import {
   etiquetaTurno, etiquetasTurno, indiceDeEtiqueta,
 } from './constantes'
 import { configPorDefecto, configCruz } from './cuadrante'
+import { normalizar } from './censo'
 
 // -------------------------------------------------------------
 //  CREACION
@@ -401,4 +402,36 @@ export function indexarCenso(censo) {
   const m = {}
   censo.forEach((c) => { m[c.id] = c })
   return m
+}
+
+// -------------------------------------------------------------
+//  NOMBRES: dos procesiones nunca pueden llamarse igual
+// -------------------------------------------------------------
+export function existeMismoDia(existentes, tipo, anio) {
+  return existentes.some((p) => p.tipo === tipo && Number(p.anio) === Number(anio))
+}
+
+// Devuelve el texto del error, o '' si el nombre vale
+export function validarNombrePersonalizado(nombre, nombrePorDefecto, existentes) {
+  const limpio = normalizar(nombre)
+  if (!limpio) return 'Ponle un nombre a la nueva procesión para distinguirla de la que ya existe.'
+  if (limpio === normalizar(nombrePorDefecto)) {
+    return `"${nombrePorDefecto}" es el nombre por defecto. Escribe uno personalizado.`
+  }
+  if (existentes.some((p) => normalizar(p.nombre) === limpio)) {
+    return `Ya hay una procesión llamada "${nombre.trim()}". Elige otro nombre.`
+  }
+  return ''
+}
+
+// Al editar los datos: el nombre no puede quedar vacío ni repetir
+// el de otra procesión. Devuelve el texto del error, o '' si vale.
+export function validarNombreEditado(nombre, id, existentes) {
+  const limpio = normalizar(nombre)
+  if (!limpio) return 'La procesión tiene que tener un nombre.'
+  const otra = existentes.find((p) => p.id !== id && normalizar(p.nombre) === limpio)
+  if (otra) {
+    return `Ya hay otra procesión llamada "${otra.nombre}" (${otra.anio}). Elige un nombre diferente.`
+  }
+  return ''
 }
