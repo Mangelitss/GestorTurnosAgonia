@@ -2,59 +2,159 @@
 @tailwind components;
 @tailwind utilities;
 
+/* =============================================================
+   PANEL DE CUADRILLEROS
+   Pensado para tablet y ordenador, con el lenguaje de las apps de
+   Apple: tipografia de sistema, grises neutros, esquinas suaves y
+   movimiento que se posa. Morado y oro de la Mayordomia como unicos
+   colores de marca.
+   ============================================================= */
+
 @layer base {
+  html { -webkit-text-size-adjust: 100%; }
+
   body {
-    @apply bg-slate-100 text-slate-800 font-sans antialiased;
+    @apply bg-slate-50 text-slate-800 font-sans antialiased;
     margin: 0;
+    font-size: 14px;
+    letter-spacing: -0.006em;
+    -webkit-tap-highlight-color: transparent;
   }
-  * {
-    box-sizing: border-box;
-  }
+
+  /* No esta pensado para el movil: por debajo de una tablet en
+     vertical se desplaza en vez de descolocarse. */
+  #root { min-width: 768px; }
+
+  * { box-sizing: border-box; }
+
+  input[type='checkbox'], input[type='radio'] { accent-color: #4F1243; }
+
+  :focus-visible { outline: 2px solid rgba(79, 18, 67, 0.55); outline-offset: 2px; }
+
+  ::selection { background: rgba(79, 18, 67, 0.16); }
 }
 
 @layer components {
+  /* ---------- Botones ---------- */
   .btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5
-           font-semibold text-sm transition-all duration-200 cursor-pointer
-           disabled:opacity-50 disabled:cursor-not-allowed select-none;
+    @apply inline-flex items-center justify-center gap-1.5 rounded-lg px-3.5 font-medium text-sm
+           cursor-pointer select-none whitespace-nowrap
+           disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100;
+    min-height: 36px;
+    transition: background-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease,
+                opacity 0.18s ease, transform 0.28s cubic-bezier(0.32, 0.72, 0, 1);
   }
-  .btn-oro {
-    @apply btn bg-oro text-morado-dark hover:bg-oro-dark hover:text-white shadow-sm;
-  }
-  .btn-morado {
-    @apply btn bg-morado text-white hover:bg-morado-light shadow-sm;
-  }
-  .btn-azul {
-    @apply btn bg-sky-800 text-white hover:bg-sky-700 shadow-sm;
-  }
-  .btn-rojo {
-    @apply btn bg-red-600 text-white hover:bg-red-500 shadow-sm;
-  }
+  .btn:active:not(:disabled) { transform: scale(0.97); }
+
+  .btn-oro { @apply btn bg-oro text-morado-dark hover:bg-[#c2a810]; }
+  .btn-morado { @apply btn bg-morado text-white hover:bg-[#5f1751]; }
+  .btn-azul { @apply btn bg-sky-800 text-white hover:bg-sky-700; }
+  .btn-rojo { @apply btn bg-red-600 text-white hover:bg-red-500; }
   .btn-ghost {
-    @apply btn bg-white text-slate-700 border border-slate-300 hover:bg-slate-50;
+    @apply btn text-slate-800 bg-[rgba(120,120,128,0.12)] hover:bg-[rgba(120,120,128,0.2)];
   }
 
+  /* ---------- Superficies ---------- */
   .card {
-    @apply bg-white rounded-xl border border-slate-200 shadow-sm;
+    @apply bg-white rounded-2xl shadow-tarjeta;
+  }
+  .card-viva {
+    transition: box-shadow 0.32s cubic-bezier(0.32, 0.72, 0, 1), transform 0.32s cubic-bezier(0.32, 0.72, 0, 1);
+  }
+  @media (hover: hover) {
+    .card-viva:hover { @apply shadow-elevada; transform: translateY(-2px); }
   }
 
+  /* ---------- Formularios ---------- */
   .input {
-    @apply w-full rounded-lg border border-slate-300 px-3 py-2 text-sm
-           outline-none transition focus:border-morado focus:ring-2 focus:ring-morado/20
-           disabled:bg-slate-100;
+    @apply w-full rounded-lg bg-white px-3 text-sm text-slate-800 outline-none
+           placeholder:text-slate-400 disabled:bg-slate-100 disabled:text-slate-500;
+    min-height: 36px;
+    padding-top: 0.45rem;
+    padding-bottom: 0.45rem;
+    box-shadow: inset 0 0 0 1px rgba(60, 60, 67, 0.2);
+    transition: box-shadow 0.2s ease;
+  }
+  .input:focus { box-shadow: inset 0 0 0 1px #4F1243, 0 0 0 3.5px rgba(79, 18, 67, 0.16); }
+
+  select.input {
+    appearance: none;
+    padding-right: 2rem;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236e6e73' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.7rem center;
   }
 
   .label {
-    @apply block text-xs font-bold uppercase tracking-wide text-slate-600 mb-1.5;
+    @apply block text-[13px] font-medium text-slate-600 mb-1.5;
   }
 
   .chip {
-    @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold;
+    @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium whitespace-nowrap;
   }
+
+  /* ---------- Control segmentado ---------- */
+  .segmentado {
+    @apply relative inline-flex rounded-[11px] p-0.5 bg-[rgba(120,120,128,0.12)];
+  }
+  .segmentado-pieza {
+    @apply relative z-10 flex items-center justify-center gap-1.5 rounded-[9px] px-4 text-[13px] font-medium
+           text-slate-700 cursor-pointer select-none whitespace-nowrap;
+    min-height: 32px;
+    transition: color 0.2s ease;
+  }
+  .segmentado-pieza[aria-pressed='true'] { @apply text-morado font-semibold; }
+  .segmentado-marca {
+    @apply absolute left-0 top-0.5 bottom-0.5 rounded-[9px] bg-white;
+    box-shadow: 0 0 0 0.5px rgba(0,0,0,0.05), 0 2px 6px rgba(0,0,0,0.12);
+    transition: transform 0.38s cubic-bezier(0.32, 0.72, 0, 1), width 0.38s cubic-bezier(0.32, 0.72, 0, 1);
+  }
+
+  /* ---------- Entrada escalonada de una rejilla o lista ---------- */
+  .escalonar > * { animation: subir 0.48s cubic-bezier(0.32, 0.72, 0, 1) both; }
+  .escalonar > *:nth-child(2) { animation-delay: 40ms; }
+  .escalonar > *:nth-child(3) { animation-delay: 80ms; }
+  .escalonar > *:nth-child(4) { animation-delay: 120ms; }
+  .escalonar > *:nth-child(5) { animation-delay: 160ms; }
+  .escalonar > *:nth-child(n + 6) { animation-delay: 200ms; }
 }
 
-/* Scrollbar discreta */
+/* ---------- Tablas: filas limpias con filete fino ---------- */
+table thead { background: transparent !important; }
+table thead th {
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0 !important;
+  text-transform: none !important;
+  white-space: nowrap;
+}
+table tbody tr { transition: background-color 0.16s ease; }
+table tbody tr:hover { background-color: rgba(120, 120, 128, 0.06); }
+
+/* ---------- En pantalla tactil, objetivos de 44 px ---------- */
+@media (pointer: coarse) {
+  .btn, .input { min-height: 44px; }
+  .segmentado-pieza { min-height: 40px; }
+}
+
+/* Barra de desplazamiento fina, que no compite con el contenido */
 ::-webkit-scrollbar { width: 10px; height: 10px; }
-::-webkit-scrollbar-track { background: #f1f5f9; }
-::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 5px; }
-::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: rgba(60, 60, 67, 0.28);
+  border: 2.5px solid transparent;
+  background-clip: padding-box;
+  border-radius: 8px;
+}
+::-webkit-scrollbar-thumb:hover { background-color: rgba(60, 60, 67, 0.45); }
+
+/* Quien pide menos movimiento, lo tiene */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

@@ -5,6 +5,8 @@
 
 import { useState } from 'react'
 import { useAuth } from '../context/AuthContext'
+import { Emblema } from '../components/Layout'
+import { Icono } from '../components/Iconos'
 
 export default function Login() {
   const { iniciarSesion, verificarLicencia, registrarConLicencia } = useAuth()
@@ -71,183 +73,192 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-morado-deep via-morado-dark to-morado-black p-4">
-      <div className="w-full max-w-md">
+    <div className="min-h-dvh flex items-center justify-center p-6 bg-morado-dark relative overflow-hidden">
+      {/* Luz tenue sobre el morado */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{ background: 'radial-gradient(90% 70% at 50% 0%, #4F1243 0%, rgba(79,18,67,0) 70%)' }}
+        aria-hidden="true"
+      />
+
+      <div className="relative w-full max-w-[400px]">
 
         {/* Cabecera */}
-        <div className="text-center mb-8">
-          <div className="text-5xl mb-3">✝️</div>
-          <h1 className="font-serif text-3xl font-bold text-oro tracking-wide">
-            GESTOR COFRADE
+        <div className="text-center mb-7 animate-subir">
+          <div className="inline-flex mb-4"><Emblema tam={68} /></div>
+          <h1 className="font-display text-[28px] font-semibold tracking-[-0.02em] text-white">
+            Gestor Cofrade
           </h1>
-          <p className="text-oro-light/70 text-sm mt-2 leading-relaxed">
+          <p className="text-oro-light/80 text-[13px] mt-1.5 leading-relaxed">
             Tercio del Cristo de la Agonía y María Magdalena
             <br />
-            <span className="text-oro-light/50 text-xs">
+            <span className="text-white/45 text-xs">
               M.I. Mayordomía de Ntro. Padre Jesús Nazareno · Orihuela
             </span>
           </p>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-2xl p-8 border-t-4 border-oro">
+        <div className="bg-white rounded-3xl shadow-hoja p-7 animate-hoja-entra">
+          <div key={modo} className="animate-subir">
 
-          {/* ---------- MODO LOGIN ---------- */}
-          {modo === 'login' && (
-            <>
-              <h2 className="font-serif text-xl font-bold text-morado mb-1">Iniciar sesión</h2>
-              <p className="text-slate-500 text-sm mb-6">Accede con tu cuenta de cuadrillero.</p>
+            {/* ---------- MODO LOGIN ---------- */}
+            {modo === 'login' && (
+              <>
+                <h2 className="font-display text-[20px] font-semibold text-slate-800 mb-1">Iniciar sesión</h2>
+                <p className="text-slate-500 text-sm mb-5">Accede con tu cuenta de cuadrillero.</p>
 
-              <form onSubmit={onLogin} className="space-y-4">
-                <div>
-                  <label className="label">Correo electrónico</label>
-                  <input
-                    type="email" required autoComplete="email" className="input"
-                    value={email} onChange={(e) => setEmail(e.target.value)}
-                    placeholder="cuadrillero@ejemplo.com"
-                  />
-                </div>
-                <div>
-                  <label className="label">Contraseña</label>
-                  <input
-                    type="password" required autoComplete="current-password" className="input"
-                    value={password} onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
-                  />
-                </div>
-
-                {error && <Aviso texto={error} />}
-
-                <button type="submit" disabled={cargando} className="btn-morado w-full">
-                  {cargando ? 'Comprobando…' : 'ENTRAR'}
-                </button>
-              </form>
-
-              <div className="mt-6 pt-6 border-t border-slate-200 text-center">
-                <p className="text-sm text-slate-500 mb-3">¿Tienes un código de licencia nuevo?</p>
-                <button
-                  onClick={() => { setModo('licencia'); limpiar() }}
-                  className="btn-oro w-full"
-                >
-                  ACTIVAR LICENCIA
-                </button>
-              </div>
-            </>
-          )}
-
-          {/* ---------- MODO LICENCIA ---------- */}
-          {modo === 'licencia' && (
-            <>
-              <h2 className="font-serif text-xl font-bold text-morado mb-1">Activar licencia</h2>
-              <p className="text-slate-500 text-sm mb-6">
-                Introduce el código que te ha facilitado el administrador.
-              </p>
-
-              <form onSubmit={onVerificar} className="space-y-4">
-                <div>
-                  <label className="label">Código de licencia</label>
-                  <input
-                    type="text" required className="input text-center text-lg font-mono tracking-[0.2em] uppercase"
-                    value={codigo} onChange={(e) => setCodigo(e.target.value.toUpperCase())}
-                    placeholder="AGON-2026-XXXX" maxLength={30}
-                  />
-                </div>
-
-                {error && <Aviso texto={error} />}
-
-                <button type="submit" disabled={cargando} className="btn-oro w-full">
-                  {cargando ? 'Verificando…' : 'VERIFICAR CÓDIGO'}
-                </button>
-              </form>
-
-              <button
-                onClick={() => { setModo('login'); limpiar() }}
-                className="mt-5 w-full text-sm text-slate-500 hover:text-morado transition"
-              >
-                ← Volver al inicio de sesión
-              </button>
-            </>
-          )}
-
-          {/* ---------- MODO REGISTRO ---------- */}
-          {modo === 'registro' && (
-            <>
-              <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 mb-6 flex items-start gap-2">
-                <span className="text-emerald-600 text-lg leading-none">✓</span>
-                <div className="text-sm">
-                  <p className="font-semibold text-emerald-800">Licencia válida</p>
-                  <p className="text-emerald-700 text-xs font-mono">{codigo}</p>
-                </div>
-              </div>
-
-              <h2 className="font-serif text-xl font-bold text-morado mb-1">Crea tu cuenta</h2>
-              <p className="text-slate-500 text-sm mb-6">
-                Estos serán tus datos de acceso a partir de ahora.
-              </p>
-
-              <form onSubmit={onRegistrar} className="space-y-4">
-                <div className="grid grid-cols-2 gap-3">
+                <form onSubmit={onLogin} className="space-y-3.5">
                   <div>
-                    <label className="label">Nombre</label>
+                    <label className="label">Correo electrónico</label>
                     <input
-                      type="text" required className="input"
-                      value={nombre} onChange={(e) => setNombre(e.target.value)}
-                      placeholder="Miguel Ángel"
+                      type="email" required autoComplete="email" className="input"
+                      value={email} onChange={(e) => setEmail(e.target.value)}
+                      placeholder="cuadrillero@ejemplo.com"
                     />
                   </div>
-                  <div>
-                    <label className="label">Apellidos</label>
-                    <input
-                      type="text" required className="input"
-                      value={apellidos} onChange={(e) => setApellidos(e.target.value)}
-                      placeholder="Martínez Rodríguez"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="label">Correo electrónico</label>
-                  <input
-                    type="email" required autoComplete="email" className="input"
-                    value={email} onChange={(e) => setEmail(e.target.value)}
-                    placeholder="cuadrillero@ejemplo.com"
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="label">Contraseña</label>
                     <input
-                      type="password" required autoComplete="new-password" className="input"
+                      type="password" required autoComplete="current-password" className="input"
                       value={password} onChange={(e) => setPassword(e.target.value)}
-                      placeholder="Mín. 6 caracteres"
-                    />
-                  </div>
-                  <div>
-                    <label className="label">Repetir</label>
-                    <input
-                      type="password" required autoComplete="new-password" className="input"
-                      value={password2} onChange={(e) => setPassword2(e.target.value)}
                       placeholder="••••••••"
                     />
                   </div>
+
+                  {error && <Aviso texto={error} />}
+
+                  <button type="submit" disabled={cargando} className="btn-morado w-full !min-h-[42px] mt-1">
+                    {cargando ? 'Comprobando…' : 'Entrar'}
+                  </button>
+                </form>
+
+                <div className="mt-5 pt-5 border-t border-black/[0.07] text-center">
+                  <p className="text-[13px] text-slate-500 mb-2.5">¿Tienes un código de licencia nuevo?</p>
+                  <button
+                    onClick={() => { setModo('licencia'); limpiar() }}
+                    className="btn-ghost w-full !min-h-[42px]"
+                  >
+                    Activar licencia
+                  </button>
+                </div>
+              </>
+            )}
+
+            {/* ---------- MODO LICENCIA ---------- */}
+            {modo === 'licencia' && (
+              <>
+                <h2 className="font-display text-[20px] font-semibold text-slate-800 mb-1">Activar licencia</h2>
+                <p className="text-slate-500 text-sm mb-5">
+                  Introduce el código que te ha facilitado el administrador.
+                </p>
+
+                <form onSubmit={onVerificar} className="space-y-3.5">
+                  <div>
+                    <label className="label">Código de licencia</label>
+                    <input
+                      type="text" required className="input text-center text-base font-mono tracking-[0.16em] uppercase"
+                      value={codigo} onChange={(e) => setCodigo(e.target.value.toUpperCase())}
+                      placeholder="AGON-2026-XXXX" maxLength={30}
+                    />
+                  </div>
+
+                  {error && <Aviso texto={error} />}
+
+                  <button type="submit" disabled={cargando} className="btn-morado w-full !min-h-[42px]">
+                    {cargando ? 'Verificando…' : 'Verificar código'}
+                  </button>
+                </form>
+
+                <button
+                  onClick={() => { setModo('login'); limpiar() }}
+                  className="mt-4 w-full text-sm text-morado hover:opacity-70 transition-opacity"
+                >
+                  ‹ Volver al inicio de sesión
+                </button>
+              </>
+            )}
+
+            {/* ---------- MODO REGISTRO ---------- */}
+            {modo === 'registro' && (
+              <>
+                <div className="bg-emerald-50 rounded-xl px-3.5 py-3 mb-5 flex items-start gap-2.5">
+                  <span className="text-emerald-600 mt-0.5"><Icono nombre="visto" tam={16} grosor={2.2} /></span>
+                  <div className="text-sm">
+                    <p className="font-medium text-emerald-900">Licencia válida</p>
+                    <p className="text-emerald-700 text-xs font-mono mt-0.5">{codigo}</p>
+                  </div>
                 </div>
 
-                {error && <Aviso texto={error} />}
+                <h2 className="font-display text-[20px] font-semibold text-slate-800 mb-1">Crea tu cuenta</h2>
+                <p className="text-slate-500 text-sm mb-5">
+                  Estos serán tus datos de acceso a partir de ahora.
+                </p>
 
-                <button type="submit" disabled={cargando} className="btn-morado w-full">
-                  {cargando ? 'Creando cuenta…' : 'CREAR CUENTA Y ENTRAR'}
+                <form onSubmit={onRegistrar} className="space-y-3.5">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="label">Nombre</label>
+                      <input
+                        type="text" required className="input"
+                        value={nombre} onChange={(e) => setNombre(e.target.value)}
+                        placeholder="Miguel Ángel"
+                      />
+                    </div>
+                    <div>
+                      <label className="label">Apellidos</label>
+                      <input
+                        type="text" required className="input"
+                        value={apellidos} onChange={(e) => setApellidos(e.target.value)}
+                        placeholder="Martínez Rodríguez"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="label">Correo electrónico</label>
+                    <input
+                      type="email" required autoComplete="email" className="input"
+                      value={email} onChange={(e) => setEmail(e.target.value)}
+                      placeholder="cuadrillero@ejemplo.com"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="label">Contraseña</label>
+                      <input
+                        type="password" required autoComplete="new-password" className="input"
+                        value={password} onChange={(e) => setPassword(e.target.value)}
+                        placeholder="Mín. 6 caracteres"
+                      />
+                    </div>
+                    <div>
+                      <label className="label">Repetir</label>
+                      <input
+                        type="password" required autoComplete="new-password" className="input"
+                        value={password2} onChange={(e) => setPassword2(e.target.value)}
+                        placeholder="••••••••"
+                      />
+                    </div>
+                  </div>
+
+                  {error && <Aviso texto={error} />}
+
+                  <button type="submit" disabled={cargando} className="btn-morado w-full !min-h-[42px]">
+                    {cargando ? 'Creando cuenta…' : 'Crear cuenta y entrar'}
+                  </button>
+                </form>
+
+                <button
+                  onClick={() => { setModo('licencia'); setLicenciaOk(null); limpiar() }}
+                  className="mt-4 w-full text-sm text-morado hover:opacity-70 transition-opacity"
+                >
+                  ‹ Usar otro código
                 </button>
-              </form>
-
-              <button
-                onClick={() => { setModo('licencia'); setLicenciaOk(null); limpiar() }}
-                className="mt-5 w-full text-sm text-slate-500 hover:text-morado transition"
-              >
-                ← Usar otro código
-              </button>
-            </>
-          )}
+              </>
+            )}
+          </div>
         </div>
 
-        <p className="text-center text-oro-light/30 text-xs mt-6">
+        <p className="text-center text-white/30 text-xs mt-6">
           Sistema de Gestión de Turnos · v2.0
         </p>
       </div>
@@ -257,8 +268,8 @@ export default function Login() {
 
 function Aviso({ texto }) {
   return (
-    <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-3 py-2.5 flex items-start gap-2">
-      <span className="leading-none">⚠️</span>
+    <div className="bg-red-50 text-red-800 text-sm rounded-xl px-3.5 py-2.5 flex items-start gap-2 animate-subir">
+      <span className="mt-0.5 text-red-600"><Icono nombre="atencion" tam={15} /></span>
       <span>{texto}</span>
     </div>
   )

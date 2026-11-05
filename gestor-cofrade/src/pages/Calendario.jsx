@@ -17,8 +17,9 @@ import {
 import { pdfCalendarioMes, pdfCalendarioListado } from '../lib/pdf'
 import { P } from '../lib/roles'
 import { useAuth } from '../context/AuthContext'
-import { Page, PageHeader, Cargando, Modal, Alerta, Toast } from '../components/ui'
+import { Page, PageHeader, Cargando, Modal, Alerta, Toast, Segmentado } from '../components/ui'
 
+import { Icono } from '../components/Iconos'
 export default function Calendario() {
   const { puede } = useAuth()
   const puedeEditar = puede(P.CAL_EDITAR)
@@ -152,7 +153,7 @@ export default function Calendario() {
   const eliminar = async (id, tipo) => {
     const ev = eventos.find((e) => e.id === id)
     const aviso = ev?.ensayo_id
-      ? `¿Borrar la convocatoria "${tipo}"?\n\n⚠️ Se borrará TAMBIÉN su ensayo, con toda la lista de asistencia y el cuadrante.\n\nEsta acción no se puede deshacer.`
+      ? `¿Borrar la convocatoria "${tipo}"?\n\nSe borrará TAMBIÉN su ensayo, con toda la lista de asistencia y el cuadrante.\n\nEsta acción no se puede deshacer.`
       : `¿Borrar la convocatoria "${tipo}"?`
 
     if (!confirm(aviso)) return
@@ -178,19 +179,18 @@ export default function Calendario() {
     <Page>
       <PageHeader
         titulo="Calendario"
-        icono="📅"
         subtitulo={`${eventosDelMes.length} convocatoria(s) en ${MESES[mes]}`}
       >
         {puedeEditar && (
           <button onClick={() => setModalOpciones(true)} className="btn-ghost text-xs">
-            ⚙️ Tipos y lugares
+            <Icono e="⚙️" /> Tipos y lugares
           </button>
         )}
         <button
           onClick={() => pdfCalendarioMes(anio, mes, eventosDelMes)}
           className="btn-ghost text-xs"
         >
-          📄 PDF del mes
+          <Icono e="📄" /> PDF del mes
         </button>
         <button
           onClick={() => pdfCalendarioListado(
@@ -199,11 +199,11 @@ export default function Calendario() {
           )}
           className="btn-ghost text-xs"
         >
-          📋 PDF listado
+          <Icono e="📋" /> PDF listado
         </button>
         {puedeEditar && (
           <button onClick={() => abrirNuevo(hoyISO())} className="btn-oro">
-            ➕ Nueva convocatoria
+            <Icono e="➕" /> Nueva convocatoria
           </button>
         )}
       </PageHeader>
@@ -212,7 +212,7 @@ export default function Calendario() {
       <div className="card p-4 mb-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <button onClick={() => irMes(-1)} className="btn-ghost px-3" title="Mes anterior">←</button>
-          <h2 className="font-serif text-xl font-bold text-morado min-w-[210px] text-center">
+          <h2 className="font-display text-xl font-semibold text-morado min-w-[210px] text-center">
             {MESES[mes]} {anio}
           </h2>
           <button onClick={() => irMes(1)} className="btn-ghost px-3" title="Mes siguiente">→</button>
@@ -279,7 +279,7 @@ export default function Calendario() {
                             title={`${e.hora} · ${e.tipo} · ${e.lugar}${e.ensayo_id ? ' · con ensayo' : ''}`}
                           >
                             <b>{e.hora}</b> {e.tipo}
-                            {e.ensayo_id && <span className="ml-0.5">📋</span>}
+                            {e.ensayo_id && <span className="ml-0.5"><Icono e="📋" /></span>}
                           </div>
                         )
                       })}
@@ -356,9 +356,9 @@ function DetalleDia({ fechaISO, eventos, puedeEditar, puedeEnsayos, onCerrar, on
               <div className="flex items-start justify-between gap-3 mb-2">
                 <div className="min-w-0">
                   <span className={`chip ${est.chip} mb-1.5`}>
-                    {est.icono} {e.tipo}
+                    {e.tipo}
                   </span>
-                  <p className="font-serif text-lg font-bold text-morado">{e.hora}</p>
+                  <p className="font-display text-lg font-semibold text-morado">{e.hora}</p>
                   <p className="text-sm text-slate-600">{e.lugar}</p>
                 </div>
               </div>
@@ -372,12 +372,12 @@ function DetalleDia({ fechaISO, eventos, puedeEditar, puedeEnsayos, onCerrar, on
               <div className="flex gap-2 flex-wrap">
                 {puedeEditar && (
                   <button onClick={() => onEditar(e)} className="btn-ghost text-xs">
-                    ✏️ Editar
+                    <Icono e="✏️" /> Editar
                   </button>
                 )}
                 {puedeEnsayos && e.ensayo_id && (
                   <Link to={`/ensayos/${e.ensayo_id}`} className="btn-oro text-xs">
-                    📋 Abrir ensayo
+                    <Icono e="📋" /> Abrir ensayo
                   </Link>
                 )}
               </div>
@@ -387,7 +387,7 @@ function DetalleDia({ fechaISO, eventos, puedeEditar, puedeEnsayos, onCerrar, on
 
         {puedeEditar && (
           <button onClick={() => onNuevo(fechaISO)} className="btn-ghost w-full">
-            ➕ Añadir otra convocatoria este día
+            <Icono e="➕" /> Añadir otra convocatoria este día
           </button>
         )}
       </div>
@@ -458,19 +458,19 @@ function FichaEvento({ evento, opciones, soloLectura, onCerrar, onGuardar, onBor
 
             {f.tipo === TIPO_ENSAYO && !evento.ensayo_id && (
               <p className="text-xs text-oro-dark mt-1.5 flex items-start gap-1">
-                <span>📋</span>
+                <span><Icono e="📋" /></span>
                 <span>Al guardar se creará también el ensayo y se abrirá para pasar lista.</span>
               </p>
             )}
             {evento.ensayo_id && f.tipo === TIPO_ENSAYO && (
               <p className="text-xs text-slate-500 mt-1.5 flex items-start gap-1">
-                <span>🔗</span>
+                <span><Icono e="🔗" /></span>
                 <span>Esta convocatoria está unida a un ensayo. Los cambios se aplicarán a los dos.</span>
               </p>
             )}
             {evento.ensayo_id && f.tipo !== TIPO_ENSAYO && (
               <p className="text-xs text-amber-700 mt-1.5 flex items-start gap-1">
-                <span>⚠️</span>
+                <span><Icono e="⚠️" /></span>
                 <span>Estás quitándole el motivo «Ensayo». Al guardar te preguntaré qué hacer con el ensayo asociado.</span>
               </p>
             )}
@@ -503,7 +503,7 @@ function FichaEvento({ evento, opciones, soloLectura, onCerrar, onGuardar, onBor
               onClick={() => onBorrar(evento.id, evento.tipo)}
               className="btn-rojo"
             >
-              🗑️ Borrar
+              <Icono e="🗑️" /> Borrar
             </button>
           )}
           <div className="flex-1" />
@@ -549,7 +549,7 @@ function ModalCambioMotivo({ datos, onResolver }) {
                      hover:border-oro hover:bg-oro/5 transition"
         >
           <p className="font-semibold text-sm text-slate-800">
-            🔗 Conservar el ensayo, pero desvincularlo
+            <Icono e="🔗" /> Conservar el ensayo, pero desvincularlo
           </p>
           <p className="text-xs text-slate-500 mt-0.5">
             El ensayo sigue existiendo con todos sus datos, pero deja de estar
@@ -563,7 +563,7 @@ function ModalCambioMotivo({ datos, onResolver }) {
                      hover:border-red-400 hover:bg-red-50 transition"
         >
           <p className="font-semibold text-sm text-red-700">
-            🗑️ Borrar el ensayo
+            <Icono e="🗑️" /> Borrar el ensayo
           </p>
           <p className="text-xs text-red-600/80 mt-0.5">
             Se elimina el ensayo con toda su lista de asistencia y su cuadrante.
@@ -577,7 +577,7 @@ function ModalCambioMotivo({ datos, onResolver }) {
                      hover:border-slate-300 transition"
         >
           <p className="font-semibold text-sm text-slate-800">
-            ↩️ Cancelar el cambio
+            <Icono e="↩️" /> Cancelar el cambio
           </p>
           <p className="text-xs text-slate-500 mt-0.5">
             La convocatoria se queda como estaba, con su motivo «Ensayo».
@@ -626,22 +626,15 @@ function GestorOpciones({ abierto, opciones, onCerrar, onCambio, avisar }) {
 
   return (
     <Modal abierto={abierto} onCerrar={onCerrar} titulo="Motivos y lugares">
-      <div className="flex gap-1 bg-slate-100 rounded-lg p-1 mb-5">
-        {[
+      <Segmentado
+        className="flex mb-5"
+        valor={pestana}
+        onCambiar={(id) => { setPestana(id); setError(''); setValor('') }}
+        opciones={[
           { id: 'tipos', label: 'Motivos' },
           { id: 'lugares', label: 'Lugares' },
-        ].map((p) => (
-          <button
-            key={p.id}
-            onClick={() => { setPestana(p.id); setError(''); setValor('') }}
-            className={`flex-1 px-3 py-2 rounded-md text-sm font-semibold transition ${
-              pestana === p.id ? 'bg-white text-morado shadow-sm' : 'text-slate-600 hover:text-morado'
-            }`}
-          >
-            {p.label}
-          </button>
-        ))}
-      </div>
+        ]}
+      />
 
       <form onSubmit={anadir} className="flex gap-2 mb-5">
         <input
@@ -661,13 +654,13 @@ function GestorOpciones({ abierto, opciones, onCerrar, onCambio, avisar }) {
           return (
             <div key={v} className="flex items-center gap-3 p-3 rounded-lg border border-slate-200">
               <span className="flex-1 text-sm font-medium text-slate-800">
-                {pestana === 'tipos' && `${estiloTipo(v).icono} `}{v}
+                {v}
               </span>
               {base ? (
                 <span className="chip bg-slate-100 text-slate-500">Base</span>
               ) : (
                 <button onClick={() => borrar(v)} className="text-red-400 hover:text-red-600 px-1">
-                  🗑️
+                  <Icono e="🗑️" />
                 </button>
               )}
             </div>

@@ -22,6 +22,7 @@ import { preferencia, siglaHombro } from '../lib/hombros'
 import { estadisticasTurno, pesoDe, colorPeso } from '../lib/estadisticas'
 import EstadisticasTurno, { ResumenVara } from './EstadisticasTurno'
 
+import { Icono } from './Iconos'
 const COLS = { 1: 'grid-cols-1', 2: 'grid-cols-2', 3: 'grid-cols-3', 4: 'grid-cols-4' }
 
 // Tres colores en ciclo: nunca hay dos turnos seguidos del mismo color
@@ -109,25 +110,25 @@ export default function Trono({
             {t > 0 && <SeparadorTurno />}
 
             <div
-              className="card overflow-hidden border-l-[6px] scroll-mt-4"
+              className="card overflow-clip border-l-[5px] scroll-mt-16"
               style={{ borderLeftColor: color.barra }}
             >
 
               {/* ---- Cabecera del turno (se queda pegada al hacer scroll) ---- */}
               <div
                 className={`px-5 py-3 flex items-center justify-between gap-3 flex-wrap
-                            sticky top-0 z-20 shadow-md
+                            sticky top-[52px] z-20
                             ${pieza === 'cruz' ? 'bg-sky-800' : 'bg-morado'}`}
               >
                 <div className="flex items-center gap-3 flex-wrap">
                   <span
-                    className="w-9 h-9 rounded-lg flex items-center justify-center
-                               font-serif text-lg font-bold shrink-0"
+                    className="w-9 h-9 rounded-[10px] flex items-center justify-center
+                               font-display text-lg font-semibold shrink-0"
                     style={{ backgroundColor: color.barra, color: color.texto }}
                   >
                     {turno.id}
                   </span>
-                  <h3 className="font-serif text-lg font-bold text-oro tracking-widest">
+                  <h3 className="font-display text-lg font-semibold text-oro tracking-[0.04em]">
                     {info.nombre.toUpperCase()} · TURNO {turno.id}
                   </h3>
                   {extra}
@@ -137,17 +138,17 @@ export default function Trono({
                   {!soloLectura && onLimpiarTurno && (
                     <button
                       onClick={() => onLimpiarTurno(t)}
-                      className="text-xs px-2.5 py-1 rounded border border-white/20 text-white/70
+                      className="text-xs px-2.5 py-1 rounded-md border border-white/20 text-white/70
                                  hover:bg-red-600 hover:border-red-500 hover:text-white transition"
                       title="Vaciar el turno (respeta las posiciones bloqueadas)"
                     >
-                      🧹 Limpiar
+                      <Icono e="🧹" /> Limpiar
                     </button>
                   )}
                 </div>
               </div>
 
-            <div className="p-5 bg-gradient-to-b from-slate-50 to-white">
+            <div className="p-5">
 
               {/* ---- Etiqueta DELANTE ---- */}
               <Etiqueta texto="D E L A N T E" />
@@ -156,7 +157,7 @@ export default function Trono({
               <div className={`grid ${cols} gap-3 mb-2`}>
                 {varas.map((vara) => (
                   <div key={vara} className="text-center">
-                    <p className="text-[10px] font-bold text-morado/60 uppercase tracking-widest">
+                    <p className="text-[10px] font-bold text-morado/60 uppercase tracking-[0.04em]">
                       {vara}
                     </p>
                     {hombros?.[t]?.[vara]?.Delante && (
@@ -261,10 +262,10 @@ export default function Trono({
 // Separador visual entre turnos, para no pasarse al hacer scroll
 function SeparadorTurno() {
   return (
-    <div className="flex items-center gap-3 my-8" aria-hidden="true">
-      <div className="flex-1 h-px bg-gradient-to-r from-transparent via-slate-300 to-slate-300" />
-      <span className="text-oro/50 text-lg leading-none">✜</span>
-      <div className="flex-1 h-px bg-gradient-to-l from-transparent via-slate-300 to-slate-300" />
+    <div className="flex items-center gap-3 my-7" aria-hidden="true">
+      <div className="flex-1 h-px bg-black/[0.08]" />
+      <span className="w-1 h-1 rounded-full bg-oro" />
+      <div className="flex-1 h-px bg-black/[0.08]" />
     </div>
   )
 }
@@ -277,7 +278,7 @@ function Etiqueta({ texto, abajo = false }) {
   return (
     <div className={`flex items-center gap-3 ${abajo ? 'mt-4' : 'mb-3'}`}>
       <div className="flex-1 h-px bg-gradient-to-r from-transparent to-oro/40" />
-      <span className="text-[11px] font-bold text-oro-dark tracking-[0.25em] uppercase">
+      <span className="text-[11px] font-bold text-oro-dark tracking-[0.2em] uppercase">
         {texto}
       </span>
       <div className="flex-1 h-px bg-gradient-to-l from-transparent to-oro/40" />
@@ -293,14 +294,12 @@ function BarraTrono({ texto = 'T R O N O', pieza = 'trono' }) {
     <div className="my-4 relative">
       <div
         className={`bg-gradient-to-r ${fondo}
-                   rounded-lg py-4 px-6 shadow-inner border-y-2 border-oro/50
+                   rounded-xl py-3 px-6
                    flex items-center justify-center gap-4`}
       >
-        <span className="text-oro/50 text-lg">✝</span>
-        <span className="font-serif text-oro font-bold tracking-[0.4em] text-sm">
+        <span className="font-display text-oro font-semibold tracking-[0.32em] text-[13px]">
           {texto}
         </span>
-        <span className="text-oro/50 text-lg">✝</span>
       </div>
     </div>
   )
@@ -311,7 +310,7 @@ function BotonesHueco({ onAnadir, onQuitar }) {
     <div className="flex gap-1 pt-0.5">
       <button
         onClick={onAnadir}
-        className="flex-1 text-[10px] py-1 rounded border border-dashed border-slate-300
+        className="flex-1 text-[10px] py-1 rounded-md border border-dashed border-slate-300
                    text-slate-400 hover:border-oro hover:text-oro-dark transition"
         title="Añadir una posición más"
       >
@@ -319,7 +318,7 @@ function BotonesHueco({ onAnadir, onQuitar }) {
       </button>
       <button
         onClick={onQuitar}
-        className="px-2 text-[10px] py-1 rounded border border-dashed border-slate-300
+        className="px-2 text-[10px] py-1 rounded-md border border-dashed border-slate-300
                    text-slate-400 hover:border-red-400 hover:text-red-500 transition"
         title="Quitar la última posición (debe estar vacía)"
       >
@@ -346,7 +345,7 @@ function Posicion({
         onDragLeave={onDragLeave}
         onDrop={onDrop}
         onClick={onClickVacio}
-        className={`flex items-center gap-2 px-2 py-1.5 rounded border border-dashed text-xs transition
+        className={`flex items-center gap-2 px-2 py-1.5 rounded-md border border-dashed text-xs transition
                     ${esDestino ? 'border-oro bg-oro/10' : 'border-slate-200 bg-white/50'}
                     ${soloLectura ? '' : 'cursor-pointer hover:border-oro hover:bg-oro/5'}`}
       >
@@ -359,7 +358,7 @@ function Posicion({
   }
 
   // --- Ocupada ---
-  let estilo = 'bg-white border-slate-200 shadow-sm'
+  let estilo = 'bg-white border-black/[0.08]'
   if (conflicto) {
     estilo = CONFLICTOS[conflicto]?.clases || CONFLICTOS.DUPLICADO.clases
   } else if (persona.repetidor) {
@@ -390,7 +389,7 @@ function Posicion({
       onDragOver={onDragOver}
       onDragLeave={onDragLeave}
       onDrop={onDrop}
-      className={`flex items-center gap-1.5 px-2 py-1.5 rounded border text-xs transition group
+      className={`relative flex items-center gap-1.5 px-2 py-1.5 rounded-md border text-xs transition group
                   ${estiloCalor ? '' : estilo} ${esDestino ? 'ring-2 ring-oro' : ''}
                   ${!soloLectura && !persona.bloqueado ? 'cursor-move' : ''}`}
       style={estiloCalor || undefined}
@@ -406,7 +405,7 @@ function Posicion({
       </span>
 
       <span className="flex-1 min-w-0 truncate font-medium">
-        {persona.bloqueado && '🔒 '}
+        {persona.bloqueado && <Icono e="🔒" tam={11} className="mr-1" />}
         {persona.nombre}
         {persona.repetidor && <span className="opacity-60"> (R)</span>}
         {pref && (
@@ -427,14 +426,15 @@ function Posicion({
           : (persona.altura || '—')}
       </span>
 
-      <span className="flex gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+      <span className="absolute right-1 inset-y-0 my-auto h-fit flex gap-0.5 rounded bg-inherit pl-1
+                       opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity">
         {onInfo && (
           <button
             onClick={onInfo}
             className={`px-0.5 rounded hover:bg-black/10 ${fondoOscuro ? 'text-white' : 'text-slate-400 hover:text-sky-600'}`}
             title="Ver su orden procesional"
           >
-            ℹ️
+            <Icono nombre="info" tam={12} />
           </button>
         )}
         {!soloLectura && (
@@ -444,7 +444,7 @@ function Posicion({
               className={`px-0.5 rounded hover:bg-black/10 ${fondoOscuro ? 'text-white' : 'text-slate-400 hover:text-morado'}`}
               title={persona.bloqueado ? 'Desbloquear' : 'Bloquear en esta posición'}
             >
-              {persona.bloqueado ? '🔓' : '🔒'}
+              <Icono e={persona.bloqueado ? '🔓' : '🔒'} tam={12} />
             </button>
             {!persona.bloqueado && (
               <button

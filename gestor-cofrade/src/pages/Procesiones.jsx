@@ -16,6 +16,7 @@ import { P } from '../lib/roles'
 import { useAuth } from '../context/AuthContext'
 import { Page, PageHeader, Cargando, Vacio, Modal, Alerta, Toast } from '../components/ui'
 
+import { Icono } from '../components/Iconos'
 export default function Procesiones() {
   const { puede } = useAuth()
   const puedeEditar = puede(P.PROC_EDITAR)
@@ -106,7 +107,7 @@ export default function Procesiones() {
       TIPOS_AUTOMATICOS.includes(p.tipo) && Number(p.anio) === anioActual
 
     const aviso = esAutomatica
-      ? `¿BORRAR "${p.nombre}"?\n\nSe perderán los turnos, los tramos y los textos.\n\n⚠️ Como es una procesión que se crea sola cada año, al borrarla NO volverá a aparecer en ${anioActual}. Tendrás que crearla a mano si te arrepientes.`
+      ? `¿BORRAR "${p.nombre}"?\n\nSe perderán los turnos, los tramos y los textos.\n\nComo es una procesión que se crea sola cada año, al borrarla NO volverá a aparecer en ${anioActual}. Tendrás que crearla a mano si te arrepientes.`
       : `¿BORRAR "${p.nombre}"?\n\nSe perderán los turnos, los tramos y los textos.\nEsta acción no se puede deshacer.`
 
     if (!confirm(aviso)) return
@@ -124,12 +125,11 @@ export default function Procesiones() {
     <Page>
       <PageHeader
         titulo="Procesiones"
-        icono="✝️"
         subtitulo={`${lista.length} procesión(es) · ${lista.filter((p) => p.publicado).length} publicada(s)`}
       >
         {puedeEditar && (
           <button onClick={() => setModalNueva(true)} className="btn-oro">
-            ➕ Nueva procesión
+            <Icono e="➕" /> Nueva procesión
           </button>
         )}
       </PageHeader>
@@ -145,7 +145,7 @@ export default function Procesiones() {
           >
             {puedeEditar && (
               <button onClick={() => setModalNueva(true)} className="btn-oro">
-                ➕ Crear procesión
+                <Icono e="➕" /> Crear procesión
               </button>
             )}
           </Vacio>
@@ -155,7 +155,7 @@ export default function Procesiones() {
           {/* ---- Año en curso y posteriores ---- */}
           {porAnio.map(([anio, procs]) => (
             <section key={anio}>
-              <h2 className="font-serif text-lg font-bold text-slate-700 mb-3 flex items-center gap-3">
+              <h2 className="font-display text-lg font-semibold text-slate-700 mb-3 flex items-center gap-3">
                 {anio}
                 {Number(anio) === anioActual && (
                   <span className="chip bg-oro/20 text-oro-dark">Año en curso</span>
@@ -166,7 +166,7 @@ export default function Procesiones() {
                 </span>
               </h2>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+              <div className="escalonar grid grid-cols-2 xl:grid-cols-3 gap-4">
                 {procs.map((p) => (
                   <TarjetaProcesion
                     key={p.id}
@@ -194,8 +194,8 @@ export default function Procesiones() {
                 onClick={() => setArchivoAbierto((a) => !a)}
                 className="w-full flex items-center gap-3 mb-3 text-left group"
               >
-                <span className="font-serif text-lg font-bold text-slate-500 group-hover:text-morado transition">
-                  📁 Procesiones anteriores
+                <span className="font-display text-lg font-semibold text-slate-500 group-hover:text-morado transition">
+                  Procesiones anteriores
                 </span>
                 <span className="chip bg-slate-100 text-slate-600">{archivo.length}</span>
                 <span className="flex-1 h-px bg-slate-200" />
@@ -207,17 +207,17 @@ export default function Procesiones() {
               {archivoAbierto && (
                 <div className="space-y-6">
                   <p className="text-xs text-slate-500 bg-slate-50 rounded-lg px-4 py-2.5">
-                    ℹ️ Procesiones de años pasados. Puedes consultarlas, duplicarlas
+                    Procesiones de años pasados. Puedes consultarlas, duplicarlas
                     para reutilizar su recorrido y tramos, y editarlas si hiciera falta.
                   </p>
 
                   {archivoPorAnio.map(([anio, procs]) => (
                     <div key={anio}>
-                      <h3 className="font-serif text-base font-bold text-slate-500 mb-3 flex items-center gap-3">
+                      <h3 className="font-display text-base font-semibold text-slate-500 mb-3 flex items-center gap-3">
                         {anio}
                         <span className="flex-1 h-px bg-slate-100" />
                       </h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                      <div className="escalonar grid grid-cols-2 xl:grid-cols-3 gap-4">
                         {procs.map((p) => (
                           <TarjetaProcesion
                             key={p.id}
@@ -273,18 +273,18 @@ function TarjetaProcesion({ procesion: p, puedeEditar, puedeBorrar, archivada, o
   const esLetra = tipo.icono.length === 1 && /[A-Z]/.test(tipo.icono)
 
   return (
-    <div className={`card p-5 hover:shadow-md transition ${archivada ? 'opacity-80 bg-slate-50/50' : ''}`}>
+    <div className={`card card-viva p-5 ${archivada ? 'opacity-80 bg-slate-50/50' : ''}`}>
       <div className="flex items-start justify-between gap-3 mb-3">
         <div className="flex items-center gap-3 min-w-0">
           <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0
                           ${p.tipo === 'viernes' ? 'bg-morado/10 text-morado'
                             : p.tipo === 'miercoles' ? 'bg-oro/20 text-oro-dark'
                             : 'bg-slate-100 text-slate-600'}
-                          ${esLetra ? 'font-serif text-xl font-bold' : 'text-xl'}`}>
+                          ${esLetra ? 'font-display text-xl font-semibold' : 'text-xl'}`}>
             {tipo.icono}
           </div>
           <div className="min-w-0">
-            <h3 className="font-serif text-base font-bold text-morado truncate">
+            <h3 className="font-display text-base font-semibold text-morado line-clamp-2 leading-snug">
               {p.nombre || tipo.nombre}
             </h3>
             <p className="text-xs text-slate-500">{tipo.nombre}</p>
@@ -297,7 +297,7 @@ function TarjetaProcesion({ procesion: p, puedeEditar, puedeBorrar, archivada, o
 
       <div className="flex gap-2 flex-wrap mb-4">
         <span className="chip bg-morado/10 text-morado">
-          ✝️ {nTrono} en trono
+          {nTrono} en trono
         </span>
         {p.lleva_cruz && (
           <span className="chip bg-sky-100 text-sky-800">
@@ -311,16 +311,16 @@ function TarjetaProcesion({ procesion: p, puedeEditar, puedeBorrar, archivada, o
 
       <div className="flex gap-2">
         <Link to={`/procesiones/${p.id}`} className="btn-morado text-xs flex-1">
-          {puedeEditar ? '✏️ Abrir' : '👁️ Ver'}
+          {puedeEditar ? 'Abrir' : 'Ver'}
         </Link>
         {puedeEditar && (
           <button onClick={onDuplicar} className="btn-ghost text-xs px-2" title="Duplicar para otro año">
-            📑
+            <Icono e="📑" />
           </button>
         )}
         {puedeBorrar && (
           <button onClick={onBorrar} className="btn-ghost text-xs px-2 text-red-500" title="Borrar">
-            🗑️
+            <Icono e="🗑️" />
           </button>
         )}
       </div>

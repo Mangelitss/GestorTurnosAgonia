@@ -4,6 +4,7 @@
 
 import { Alerta } from './ui'
 
+import { Icono } from './Iconos'
 // --- Barra de aviso cuando otro está editando ---
 export function AvisoBloqueo({ bloqueo, onForzar, onReintentar }) {
   if (!bloqueo) return null
@@ -12,7 +13,7 @@ export function AvisoBloqueo({ bloqueo, onForzar, onReintentar }) {
     <div className="card border-amber-300 bg-amber-50 p-4 mb-5">
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div className="flex items-start gap-2.5 min-w-0">
-          <span className="text-lg leading-none">🔒</span>
+          <span className="text-lg leading-none"><Icono e="🔒" /></span>
           <div>
             <p className="text-sm font-semibold text-amber-900">
               Lo está editando {bloqueo.nombre}
@@ -29,7 +30,7 @@ export function AvisoBloqueo({ bloqueo, onForzar, onReintentar }) {
 
         <div className="flex gap-2 shrink-0">
           <button onClick={onReintentar} className="btn-ghost text-xs">
-            🔄 Reintentar
+            <Icono e="🔄" /> Reintentar
           </button>
           <button
             onClick={() => {
@@ -41,7 +42,7 @@ export function AvisoBloqueo({ bloqueo, onForzar, onReintentar }) {
             }}
             className="btn-ghost text-xs text-amber-800"
           >
-            ⚡ Tomar el control
+            <Icono e="⚡" /> Tomar el control
           </button>
         </div>
       </div>
@@ -63,7 +64,7 @@ export function EstadoGuardado({ sinGuardar, guardando, ultimoGuardado, onGuarda
   if (sinGuardar) {
     return (
       <button onClick={() => onGuardar()} className="btn-oro text-xs">
-        💾 Guardar ahora
+        <Icono e="💾" /> Guardar ahora
       </button>
     )
   }

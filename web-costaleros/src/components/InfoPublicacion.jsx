@@ -25,35 +25,33 @@ export default function InfoPublicacion({ pub }) {
   if (!horas.length && !lugar && !avisos.length) return null
 
   return (
-    <div className="space-y-2.5">
+    <div className="space-y-3">
       {avisos.length > 0 && (
         <ul className="space-y-2">
           {avisos.map((a, i) => (
             <li
               key={i}
-              className="flex items-start gap-2.5 rounded-lg border border-amber-400/40
-                         bg-amber-500/10 px-3.5 py-2.5 text-sm leading-snug text-amber-50"
+              className="animate-subir rounded-sm border-l-2 border-oro bg-oro/[0.11] px-3.5 py-2.5"
+              style={{ animationDelay: `${i * 120}ms` }}
             >
-              <span className="shrink-0" aria-hidden="true">📢</span>
-              <span className="whitespace-pre-wrap">{a}</span>
+              <p className="etiqueta mb-0.5 text-oro-pale/90">Aviso</p>
+              <p className="prosa whitespace-pre-wrap text-crema">{a}</p>
             </li>
           ))}
         </ul>
       )}
 
       {(horas.length > 0 || lugar) && (
-        <div className="overflow-hidden rounded-lg border border-oro/25 bg-morado-black/40">
+        <div className="cartela animate-subir overflow-hidden" style={{ animationDelay: '120ms' }}>
           {horas.length > 0 && (
             <div
-              className="grid divide-x divide-oro/15"
+              className="grid divide-x divide-oro/20"
               style={{ gridTemplateColumns: `repeat(${horas.length}, minmax(0, 1fr))` }}
             >
               {horas.map((h) => (
-                <div key={h.etiqueta} className="px-2 py-2.5 text-center">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-oro-light/50">
-                    {h.etiqueta}
-                  </p>
-                  <p className="mt-0.5 font-titulo text-xl font-bold leading-none text-oro sm:text-2xl">
+                <div key={h.etiqueta} className="px-1 pb-3 pt-3.5 text-center">
+                  <p className="etiqueta">{h.etiqueta}</p>
+                  <p className="mt-1 font-titulo text-[22px] font-semibold leading-none text-oro-pale">
                     {h.valor}
                   </p>
                 </div>
@@ -61,9 +59,9 @@ export default function InfoPublicacion({ pub }) {
             </div>
           )}
           {lugar && (
-            <p className={`px-3 py-2 text-center text-xs font-semibold text-crema/80
-                           ${horas.length ? 'border-t border-oro/15' : ''}`}>
-              <span aria-hidden="true">📍 </span>{lugar}
+            <p className={`px-3 pb-3 text-center font-texto text-[16px] italic leading-snug text-crema/85
+                           ${horas.length ? 'pt-2 border-t border-oro/20 mx-2' : 'pt-3'}`}>
+              {lugar}
             </p>
           )}
         </div>
@@ -77,8 +75,7 @@ export function TenerEnCuenta({ texto }) {
   return (
     <div>
       <Rotulo>A tener en cuenta</Rotulo>
-      <p className="whitespace-pre-wrap rounded-lg border-l-4 border-oro bg-morado-dark/60
-                    px-4 py-3 text-sm leading-relaxed text-crema/90">
+      <p className="prosa whitespace-pre-wrap border-l-2 border-oro/60 pl-4">
         {texto}
       </p>
     </div>

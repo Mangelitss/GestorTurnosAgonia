@@ -18,28 +18,21 @@ export default function FichaEnsayo({ ensayo, persona, marcas = {}, onCambiar })
   }, [ensayo, persona.id])
 
   return (
-    <div className="animate-subir space-y-6">
-      <div className="rounded-xl border border-oro/40 bg-morado-dark/70 p-5">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
+    <div className="animate-aparecer space-y-7">
+      <div className="cartela p-5">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
             <p className="etiqueta mb-1">Tu puesto en el ensayo</p>
-            <h2 className="font-titulo text-2xl font-bold text-oro-light">{persona.nombre}</h2>
+            <h2 className="font-titulo text-[21px] font-semibold leading-tight text-oro-pale">{persona.nombre}</h2>
           </div>
-          <button onClick={onCambiar} className="btn-linea text-xs">No soy yo</button>
+          <button onClick={onCambiar} className="btn-discreto shrink-0">No soy yo</button>
         </div>
 
-        <div className="mt-4 space-y-2">
+        <div className="mt-4 divide-y divide-oro/15 border-t border-oro/15">
           {puestos.map(({ turno, ref }, i) => (
-            <div
-              key={i}
-              className="flex flex-wrap items-center gap-2 rounded-lg border border-oro/20
-                         bg-morado-black/40 px-3 py-2 text-sm"
-            >
-              <span className="rounded-full bg-oro/20 px-2.5 py-0.5 text-[11px] font-bold
-                               text-oro-light ring-1 ring-oro/40">
-                Turno {turno.id}
-              </span>
-              <span className="text-crema/80">{describirPosicion(ref)}</span>
+            <div key={i} className="py-2.5">
+              <p className="font-titulo text-[13px] font-semibold text-oro-light">Turno {turno.id}</p>
+              <p className="prosa">{describirPosicion(ref)}</p>
             </div>
           ))}
         </div>
@@ -47,7 +40,7 @@ export default function FichaEnsayo({ ensayo, persona, marcas = {}, onCambiar })
 
       <div>
         <Rotulo>Con quién vas</Rotulo>
-        <div className="space-y-4">
+        <div className="space-y-5">
           {[...new Set(puestos.map((p) => p.turno))].map((turno) => (
             <CuadranteTurno key={turno.id} turno={turno} resaltarId={persona.id} marcas={marcas} />
           ))}

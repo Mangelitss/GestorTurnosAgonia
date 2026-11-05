@@ -12,7 +12,7 @@ import {
 } from '@nucleo/conflictos'
 import { PIEZAS } from '@nucleo/constantes'
 import CuadranteTurno from './CuadranteTurno'
-import { Rotulo } from './ui'
+import { Revelar, Rotulo } from './ui'
 
 export default function FichaCostalero({ procesion, persona, marcas = {}, onCambiar }) {
   const [verCuadrante, setVerCuadrante] = useState(false)
@@ -41,53 +41,47 @@ export default function FichaCostalero({ procesion, persona, marcas = {}, onCamb
   }, [procesion, persona.id])
 
   return (
-    <div className="animate-subir space-y-6">
+    <div className="animate-aparecer space-y-7">
 
       {/* ---- Quien es y que le toca ---- */}
-      <div className="rounded-xl border border-oro/40 bg-morado-dark/70 p-5">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
+      <div className="cartela p-5">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
             <p className="etiqueta mb-1">Tu orden procesional</p>
-            <h2 className="font-titulo text-2xl font-bold text-oro-light">
+            <h2 className="font-titulo text-[21px] font-semibold leading-tight text-oro-pale">
               {persona.nombre}
             </h2>
           </div>
-          <button onClick={onCambiar} className="btn-linea text-xs">
+          <button onClick={onCambiar} className="btn-discreto shrink-0">
             No soy yo
           </button>
         </div>
 
-        <div className="mt-4 grid grid-cols-3 gap-2 text-center">
-          <Dato valor={resumen.cargando} texto={resumen.cargando === 1 ? 'tramo cargando' : 'tramos cargando'} />
-          <Dato valor={resumen.descansando} texto="descansando" />
-          <Dato valor={resumen.total} texto="tramos en total" />
+        <div className="mt-4 grid grid-cols-3 divide-x divide-oro/20 border-y border-oro/20 py-3 text-center">
+          <Dato valor={resumen.cargando} texto="cargando" />
+          <Dato valor={resumen.descansando} texto="descanso" />
+          <Dato valor={resumen.total} texto="tramos" />
         </div>
 
         {puestos.length > 0 && (
-          <div className="mt-4 space-y-2">
+          <div className="mt-1 divide-y divide-oro/15">
             {puestos.map((p, i) => (
-              <div
-                key={i}
-                className="flex flex-wrap items-center gap-2 rounded-lg border
-                           border-oro/20 bg-morado-black/40 px-3 py-2 text-sm"
-              >
-                <span className={`chip rounded-full px-2.5 py-0.5 text-[11px] font-bold ${
-                  p.pieza === 'cruz'
-                    ? 'bg-sky-500/20 text-sky-200 ring-1 ring-sky-400/40'
-                    : 'bg-oro/20 text-oro-light ring-1 ring-oro/40'
+              <div key={i} className="py-2.5">
+                <p className={`font-titulo text-[13px] font-semibold ${
+                  p.pieza === 'cruz' ? 'text-sky-200' : 'text-oro-light'
                 }`}>
                   {PIEZAS[p.pieza].nombre} · Turno {p.turno}
-                </span>
-                <span className="text-crema/80">{describirPosicion(p.ref)}</span>
+                </p>
+                <p className="prosa">{describirPosicion(p.ref)}</p>
               </div>
             ))}
           </div>
         )}
 
         {nota && (
-          <div className="mt-4 rounded-lg border-l-4 border-oro bg-oro/10 px-4 py-3">
+          <div className="mt-3 border-l-2 border-oro pl-3.5">
             <p className="etiqueta mb-1">Nota del cuadrillero</p>
-            <p className="whitespace-pre-wrap text-sm leading-relaxed text-crema">{nota}</p>
+            <p className="prosa whitespace-pre-wrap text-crema">{nota}</p>
           </div>
         )}
       </div>
@@ -95,7 +89,11 @@ export default function FichaCostalero({ procesion, persona, marcas = {}, onCamb
       {/* ---- Tramo a tramo ---- */}
       <div>
         <Rotulo>Tramo a tramo</Rotulo>
-        <ol className="space-y-2">
+        <ol className="relative">
+          <span
+            className="absolute bottom-3 left-[13px] top-3 w-px origin-top animate-descender bg-oro/35"
+            aria-hidden="true"
+          />
           {orden.map((o, i) => (
             <Paso key={o.tramo.id || i} paso={o} numero={i + 1} />
           ))}
@@ -109,10 +107,10 @@ export default function FichaCostalero({ procesion, persona, marcas = {}, onCamb
 
           {!verCuadrante ? (
             <button onClick={() => setVerCuadrante(true)} className="btn-linea w-full">
-              Ver el cuadrante {puestos.length > 1 ? 'de mis turnos' : 'de mi turno'}
+              Ver {puestos.length > 1 ? 'mis turnos' : 'mi turno'}
             </button>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-5">
               {puestos.map((p, i) => {
                 const cuadrante = p.pieza === 'cruz'
                   ? procesion.cuadrante_cruz
@@ -128,7 +126,7 @@ export default function FichaCostalero({ procesion, persona, marcas = {}, onCamb
                   />
                 )
               })}
-              <button onClick={() => setVerCuadrante(false)} className="btn-linea w-full text-xs">
+              <button onClick={() => setVerCuadrante(false)} className="btn-linea w-full">
                 Ocultar
               </button>
             </div>
@@ -141,11 +139,9 @@ export default function FichaCostalero({ procesion, persona, marcas = {}, onCamb
 
 function Dato({ valor, texto }) {
   return (
-    <div className="rounded-lg border border-morado-light/30 bg-morado-black/40 px-2 py-3">
-      <p className="font-titulo text-2xl font-bold text-oro">{valor}</p>
-      <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-wide text-oro-light/50">
-        {texto}
-      </p>
+    <div className="px-1">
+      <p className="font-titulo text-[24px] font-semibold leading-none text-oro-pale">{valor}</p>
+      <p className="etiqueta mt-1.5 !text-[9.5px]">{texto}</p>
     </div>
   )
 }
@@ -156,54 +152,43 @@ function Paso({ paso, numero }) {
   const pieza = carga ? paso.partes[0].pieza : null
 
   return (
-    <li
-      className={`rounded-lg border px-4 py-3 ${
+    <Revelar as="li" className="relative pb-5 pl-10 last:pb-0">
+      <span
+        className={`absolute left-0 top-0 flex h-[27px] w-[27px] items-center justify-center rounded-full
+                    border font-titulo text-[11.5px] font-semibold ${
+                      carga
+                        ? pieza === 'cruz'
+                          ? 'border-sky-300 bg-sky-500 text-white'
+                          : 'border-oro-pale bg-oro text-morado-black'
+                        : 'border-oro/30 bg-morado-black text-oro-light/60'
+                    }`}
+      >
+        {numero}
+      </span>
+
+      <p className={`pt-0.5 text-[15px] font-bold leading-snug ${carga ? 'text-crema' : 'text-crema/65'}`}>
+        {paso.tramo.nombre}
+      </p>
+
+      {paso.recorrido && (
+        <p className="mt-0.5 font-texto text-[16px] italic leading-snug text-oro-light/65">{paso.recorrido}</p>
+      )}
+
+      <p className={`mt-1 text-[14px] font-semibold leading-snug ${
         carga
-          ? 'border-oro/40 bg-morado-dark/70'
-          : 'border-morado-light/25 bg-morado-deep/50'
-      }`}
-    >
-      <div className="flex items-start gap-3">
-        <span
-          className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full
-                      text-[11px] font-bold ${
-                        carga
-                          ? pieza === 'cruz'
-                            ? 'bg-sky-500 text-white'
-                            : 'bg-oro text-morado-black'
-                          : 'bg-morado-light/30 text-oro-light/50'
-                      }`}
-        >
-          {numero}
-        </span>
+          ? pieza === 'cruz' ? 'text-sky-300' : 'text-oro-pale'
+          : 'text-oro-light/60'
+      }`}>
+        {carga
+          ? paso.partes.map((p) => `Cargas — Turno ${p.turno} (${PIEZAS[p.pieza].nombre})`).join(' + ')
+          : `Descansas — ${paso.rol}`}
+      </p>
 
-        <div className="min-w-0 flex-1">
-          <p className={`text-sm font-bold ${carga ? 'text-crema' : 'text-oro-light/50'}`}>
-            {paso.tramo.nombre}
-          </p>
-
-          {paso.recorrido && (
-            <p className="mt-0.5 text-xs text-oro-light/40">{paso.recorrido}</p>
-          )}
-
-          <p className={`mt-1.5 text-sm font-semibold ${
-            carga
-              ? pieza === 'cruz' ? 'text-sky-300' : 'text-oro'
-              : 'text-oro-light/45'
-          }`}>
-            {carga
-              ? paso.partes.map((p) => `Cargas — Turno ${p.turno} (${PIEZAS[p.pieza].nombre})`).join(' + ')
-              : `Descansas — ${paso.rol}`}
-          </p>
-
-          {paso.tramo.texto && (
-            <p className="mt-2 whitespace-pre-wrap border-l-2 border-oro/30 pl-3
-                          text-xs leading-relaxed text-crema/60">
-              {paso.tramo.texto}
-            </p>
-          )}
-        </div>
-      </div>
-    </li>
+      {paso.tramo.texto && (
+        <p className="prosa mt-2 whitespace-pre-wrap text-[16px] text-crema/75">
+          {paso.tramo.texto}
+        </p>
+      )}
+    </Revelar>
   )
 }

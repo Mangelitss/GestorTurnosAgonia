@@ -14,6 +14,7 @@ import { pdfProcesion } from '../lib/pdf'
 import PanelConflictos, { LeyendaConflictos, LeyendaPiezas } from './PanelConflictos'
 import { Alerta, Modal } from './ui'
 
+import { Icono } from './Iconos'
 export default function PestanaPublicar({
   procesion,
   conflictos,
@@ -72,7 +73,7 @@ export default function PestanaPublicar({
       <div className={`card p-5 ${listo && todoOk ? 'border-emerald-300 bg-emerald-50/40' : ''}`}>
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
-            <h3 className="font-serif text-lg font-bold text-morado mb-1">
+            <h3 className="font-display text-lg font-semibold text-morado mb-1">
               {listo && todoOk ? '✓ El cuadrante está listo' : 'Revisión del cuadrante'}
             </h3>
             <p className="text-sm text-slate-600">
@@ -83,7 +84,7 @@ export default function PestanaPublicar({
           </div>
 
           <button onClick={() => pdfProcesion(procesion)} className="btn-ghost text-sm">
-            📄 Descargar PDF
+            <Icono e="📄" /> Descargar PDF
           </button>
         </div>
       </div>
@@ -96,14 +97,14 @@ export default function PestanaPublicar({
 
       {/* ---- Revisiones ---- */}
       <div className="card p-5">
-        <h3 className="font-serif text-base font-bold text-morado mb-4">
+        <h3 className="font-display text-base font-semibold text-morado mb-4">
           Comprobaciones
         </h3>
         <ul className="space-y-2.5">
           {revisiones.map((r, i) => (
             <li key={i} className="flex items-start gap-2.5 text-sm">
               <span className={`shrink-0 ${r.ok ? 'text-emerald-600' : r.critico ? 'text-red-600' : 'text-amber-600'}`}>
-                {r.ok ? '✓' : r.critico ? '⛔' : '⚠️'}
+                <Icono e={r.ok ? '✓' : r.critico ? '⛔' : '⚠️'} />
               </span>
               <span className={r.ok ? 'text-slate-600' : 'text-slate-800 font-medium'}>
                 {r.texto}
@@ -124,7 +125,7 @@ export default function PestanaPublicar({
       {/* ---- Conflictos ---- */}
       <div>
         <div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
-          <h3 className="font-serif text-base font-bold text-morado">Conflictos</h3>
+          <h3 className="font-display text-base font-semibold text-morado">Conflictos</h3>
           <LeyendaConflictos compacta />
         </div>
         <PanelConflictos resultado={conflictos} />
@@ -134,7 +135,7 @@ export default function PestanaPublicar({
       <div className="card p-5">
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
-            <h3 className="font-serif text-base font-bold text-morado mb-1">
+            <h3 className="font-display text-base font-semibold text-morado mb-1">
               Indicaciones por costalero
             </h3>
             <p className="text-sm text-slate-500">
@@ -142,7 +143,7 @@ export default function PestanaPublicar({
             </p>
           </div>
           <button onClick={() => setVerCostaleros(true)} className="btn-ghost text-sm">
-            👥 Ver indicaciones
+            <Icono e="👥" /> Ver indicaciones
           </button>
         </div>
         <div className="mt-3">
@@ -153,7 +154,7 @@ export default function PestanaPublicar({
       {/* ---- Textos de los tramos ---- */}
       <div className="card overflow-hidden">
         <div className="bg-slate-50 border-b border-slate-200 px-5 py-3">
-          <h3 className="font-serif text-base font-bold text-morado">
+          <h3 className="font-display text-base font-semibold text-morado">
             Indicaciones de cada tramo
           </h3>
         </div>
@@ -203,7 +204,7 @@ export default function PestanaPublicar({
 
       {/* ---- Normativa ---- */}
       <div className="card p-5">
-        <h3 className="font-serif text-base font-bold text-morado mb-1">
+        <h3 className="font-display text-base font-semibold text-morado mb-1">
           Normativa de la cuadrilla
         </h3>
         <p className="text-sm text-slate-500 mb-3">

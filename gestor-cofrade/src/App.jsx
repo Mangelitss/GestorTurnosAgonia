@@ -7,6 +7,7 @@ import { useAuth } from './context/AuthContext'
 import { P } from './lib/roles'
 import Layout from './components/Layout'
 import Protegida from './components/Protegida'
+import { Aspas } from './components/ui'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 import Censo from './pages/Censo'
@@ -24,9 +25,9 @@ export default function App() {
   // Pantalla de arranque mientras Firebase comprueba la sesion
   if (cargando) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-morado-black gap-4">
-        <div className="w-10 h-10 border-[3px] border-morado-light border-t-oro rounded-full animate-spin" />
-        <p className="text-oro-light/60 text-sm">Comprobando sesión…</p>
+      <div className="min-h-dvh flex flex-col items-center justify-center bg-morado-dark gap-3">
+        <Aspas tam={28} className="text-oro-light" />
+        <p className="text-white/50 text-[13px]">Comprobando sesión…</p>
       </div>
     )
   }

@@ -20,12 +20,12 @@ import PestanaTurnos from '../components/PestanaTurnos'
 import PestanaPublicar from '../components/PestanaPublicar'
 import { LeyendaConflictos } from '../components/PanelConflictos'
 import { AvisoBloqueo, EstadoGuardado } from '../components/AvisoBloqueo'
-import { Page, Cargando, Modal, Alerta, Toast } from '../components/ui'
+import { Page, Cargando, Modal, Alerta, Toast, Segmentado } from '../components/ui'
 
 const PESTANAS = [
-  { id: 'tramos', label: 'Tramos', icono: '🗺️' },
-  { id: 'turnos', label: 'Turnos', icono: '👥' },
-  { id: 'revision', label: 'Revisión', icono: '🔎' },
+  { id: 'tramos', label: 'Tramos', icono: 'mapa' },
+  { id: 'turnos', label: 'Turnos', icono: 'personas' },
+  { id: 'revision', label: 'Revisión', icono: 'lupa' },
 ]
 
 export default function ProcesionDetalle() {
@@ -106,31 +106,27 @@ export default function ProcesionDetalle() {
 
   const tipo = TIPOS_PROCESION[procesion.tipo] || TIPOS_PROCESION.extraordinaria
   const estado = ESTADOS_PROCESION[procesion.estado] || ESTADOS_PROCESION.borrador
-  const esLetra = tipo.icono.length === 1 && /[A-Z]/.test(tipo.icono)
 
   return (
     <Page>
       {/* ---------- CABECERA ---------- */}
       <div className="flex items-start justify-between gap-4 mb-5 flex-wrap">
         <div className="min-w-0">
-          <Link to="/procesiones" className="text-sm text-slate-500 hover:text-morado mb-1 inline-block">
-            ← Volver a procesiones
+          <Link to="/procesiones" className="text-[15px] text-morado hover:opacity-70 transition-opacity mb-1.5 inline-block">
+            ‹ Procesiones
           </Link>
-          <h1 className="font-serif text-2xl font-bold text-morado flex items-center gap-3 flex-wrap">
-            <span className={esLetra ? 'font-serif' : ''}>{tipo.icono}</span>
+          <h1 className="font-display text-[32px] leading-[1.12] font-bold tracking-[-0.022em] text-slate-800 flex items-center gap-3 flex-wrap">
             {procesion.nombre}
             <span className={`chip ${estado.chip}`}>{estado.nombre}</span>
           </h1>
-          <p className="text-slate-500 text-sm mt-1 flex items-center gap-3 flex-wrap">
+          <p className="text-slate-500 text-[15px] mt-1.5 flex items-center gap-3 flex-wrap">
             {tipo.nombre} · {procesion.anio}
             {!soloLectura && (
               <button
                 onClick={() => setModalDatos(true)}
-                className="inline-flex items-center gap-1.5 rounded-full border border-oro
-                           bg-oro/15 px-3 py-1 text-xs font-semibold text-oro-dark shadow-sm
-                           transition hover:bg-oro hover:text-morado-dark"
+                className="btn-ghost !min-h-0 py-1 px-3 text-xs"
               >
-                ✏️ Editar datos
+                Editar datos
               </button>
             )}
           </p>
@@ -185,19 +181,7 @@ export default function ProcesionDetalle() {
       )}
 
       {/* ---------- PESTAÑAS ---------- */}
-      <div className="flex gap-1 bg-slate-100 rounded-lg p-1 mb-5 w-fit">
-        {PESTANAS.map((p) => (
-          <button
-            key={p.id}
-            onClick={() => setPestana(p.id)}
-            className={`px-5 py-2.5 rounded-md text-sm font-semibold transition flex items-center gap-2 ${
-              pestana === p.id ? 'bg-white text-morado shadow-sm' : 'text-slate-600 hover:text-morado'
-            }`}
-          >
-            <span>{p.icono}</span> {p.label}
-          </button>
-        ))}
-      </div>
+      <Segmentado className="mb-5" valor={pestana} onCambiar={setPestana} opciones={PESTANAS} />
 
       {/* Leyenda visible en la pestaña de turnos */}
       {pestana === 'turnos' && (

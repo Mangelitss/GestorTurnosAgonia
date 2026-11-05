@@ -24,9 +24,9 @@ export default function CuadranteTurno({ turno, pieza = 'trono', resaltarId = nu
   ]
 
   return (
-    <div className="overflow-hidden rounded-lg border border-oro/25">
-      <h3 className="bg-morado px-3 py-2.5 text-center font-titulo text-sm font-bold
-                     uppercase tracking-[0.15em] text-crema">
+    <div className="cartela animate-subir overflow-hidden p-[5px]">
+      <h3 className="border-b border-oro/30 px-3 py-2.5 text-center font-titulo text-[13px] font-semibold
+                     uppercase tracking-[0.14em] text-oro-pale">
         {pieza === 'cruz' ? 'Cruz Guía' : 'Trono'} · Turno {turno.id}
       </h3>
 
@@ -57,29 +57,29 @@ function Vara({ nombre, secciones, pieza, resaltarId, marcas }) {
   const detras = secciones?.Detras || []
 
   return (
-    <div className="min-w-0 bg-morado-deep/90 p-1.5 sm:p-3">
-      <h4 className="mb-1.5 border-b-2 border-oro/50 pb-1 text-center font-titulo
-                     text-[10px] font-bold uppercase tracking-[0.1em] text-oro-light sm:text-[11px]">
+    <div className="min-w-0 bg-morado-black/70 p-1.5 sm:p-3">
+      <h4 className="mb-1.5 text-center font-titulo text-[10.5px] font-semibold uppercase
+                     tracking-[0.08em] text-oro-light sm:text-[11px]">
         <span className="sm:hidden">{CORTO[nombre] || nombre}</span>
         <span className="hidden sm:inline">Vara {nombre}</span>
       </h4>
 
       {delante.length > 0 && (
         <>
-          <Franja>▲ Delante</Franja>
+          <Franja>Delante</Franja>
           <Lista gente={delante} resaltarId={resaltarId} marcas={marcas} />
         </>
       )}
 
-      <div className="my-1.5 rounded bg-morado px-1 py-1 text-center text-[9px]
-                      font-bold uppercase tracking-[0.15em] text-oro-light sm:text-[10px]">
+      <div className="my-2 border-y border-oro/40 bg-morado/70 py-1 text-center font-titulo text-[9.5px]
+                      font-semibold uppercase tracking-[0.16em] text-oro-light">
         {pieza === 'cruz' ? 'Cruz' : 'Trono'}
       </div>
 
       {detras.length > 0 && (
         <>
           <Lista gente={detras} resaltarId={resaltarId} marcas={marcas} />
-          <Franja>▼ Detrás</Franja>
+          <Franja>Detrás</Franja>
         </>
       )}
     </div>
@@ -88,8 +88,7 @@ function Vara({ nombre, secciones, pieza, resaltarId, marcas }) {
 
 function Franja({ children }) {
   return (
-    <div className="my-1 rounded bg-morado-dark/80 px-1 py-0.5 text-center text-[9px]
-                    font-bold uppercase tracking-[0.1em] text-oro-light/60 sm:text-[10px]">
+    <div className="my-1 text-center font-texto text-[13px] italic leading-none text-oro-light/60">
       {children}
     </div>
   )
@@ -103,8 +102,8 @@ function Lista({ gente, resaltarId, marcas }) {
           return (
             <li
               key={i}
-              className="flex min-h-[34px] items-center justify-center rounded border border-dashed
-                         border-morado-light/40 px-1 text-center text-[10px] italic text-oro-light/25"
+              className="flex min-h-[36px] items-center justify-center rounded-[2px] border border-dashed
+                         border-oro/20 px-1 text-center font-texto text-[12.5px] italic text-oro-light/35"
             >
               libre
             </li>
@@ -117,11 +116,11 @@ function Lista({ gente, resaltarId, marcas }) {
         return (
           <li
             key={i}
-            className={`flex min-h-[34px] items-center rounded border px-1.5 py-1 text-[11px]
+            className={`flex min-h-[36px] items-center rounded-[2px] border px-1.5 py-1 text-[11px]
                         leading-tight sm:px-2 sm:text-xs ${
                           yo
-                            ? 'border-oro bg-oro text-morado-black font-extrabold shadow-lg shadow-oro/20'
-                            : marca || 'border-morado-light/30 bg-morado-black/50 text-crema/90'
+                            ? 'animate-resplandor border-oro-pale bg-oro font-extrabold text-morado-black'
+                            : marca || 'border-oro/15 bg-morado-black/60 text-crema/90'
                         }`}
           >
             <span className="min-w-0 break-words font-semibold [hyphens:auto]" lang="es">

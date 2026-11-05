@@ -15,8 +15,9 @@ import {
 import { OPCIONES_HOMBRO } from '../lib/constantes'
 import { P } from '../lib/roles'
 import { useAuth } from '../context/AuthContext'
-import { Page, PageHeader, Cargando, Vacio, Modal, Alerta, Toast } from '../components/ui'
+import { Page, PageHeader, Cargando, Vacio, Modal, Alerta, Toast, Segmentado } from '../components/ui'
 
+import { Icono } from '../components/Iconos'
 export default function Censo() {
   const { puede } = useAuth()
   const puedeEditar = puede(P.CENSO_EDITAR)
@@ -187,28 +188,27 @@ export default function Censo() {
     <Page>
       <PageHeader
         titulo="Censo de Costaleros"
-        icono="👥"
         subtitulo={`${stats.total} costaleros · ${stats.miercoles} Miércoles · ${stats.viernes} Viernes · ✚ ${stats.cruzMie}/${stats.cruzVie} cruz`}
       >
         {puedeCampos && (
           <button onClick={() => setModalCampos(true)} className="btn-ghost text-xs">
-            ⚙️ Campos
+            <Icono e="⚙️" /> Campos
           </button>
         )}
         {puedeImportar && (
           <button onClick={() => setModalImportar(true)} className="btn-ghost text-xs">
-            📥 Importar
+            <Icono e="📥" /> Importar
           </button>
         )}
         <button onClick={() => exportarCensoJSON(censo)} className="btn-ghost text-xs">
-          💾 Exportar
+          <Icono e="💾" /> Exportar
         </button>
         {puedeEditar && (
           <button
             onClick={() => setEditando({ ...costaleroVacio() })}
             className="btn-oro"
           >
-            ➕ Añadir costalero
+            <Icono e="➕" /> Añadir costalero
           </button>
         )}
       </PageHeader>
@@ -217,7 +217,7 @@ export default function Censo() {
       <div className="card p-4 mb-4">
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex-1 min-w-[240px] relative">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">🔍</span>
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"><Icono e="🔍" /></span>
             <input
               className="input pl-9"
               placeholder="Buscar por nombre o altura…"
@@ -226,27 +226,17 @@ export default function Censo() {
             />
           </div>
 
-          <div className="flex gap-1 bg-slate-100 rounded-lg p-1">
-            {[
+          <Segmentado
+            valor={filtro}
+            onCambiar={setFiltro}
+            opciones={[
               { id: 'todos', label: 'Todos' },
               { id: 'miercoles', label: 'Miércoles' },
               { id: 'viernes', label: 'Viernes' },
               { id: 'cruz', label: '✚ Cruz' },
               { id: 'ninguna', label: 'Sin apuntar' },
-            ].map((f) => (
-              <button
-                key={f.id}
-                onClick={() => setFiltro(f.id)}
-                className={`px-3 py-1.5 rounded-md text-xs font-semibold transition ${
-                  filtro === f.id
-                    ? 'bg-white text-morado shadow-sm'
-                    : 'text-slate-600 hover:text-morado'
-                }`}
-              >
-                {f.label}
-              </button>
-            ))}
-          </div>
+            ]}
+          />
 
           <span className="text-xs text-slate-500 whitespace-nowrap">
             {visibles.length} de {censo.length}
@@ -280,7 +270,7 @@ export default function Censo() {
             </button>
             {puedeBorrar && (
               <button onClick={borrarSeleccionados} className="btn-rojo text-xs ml-auto">
-                🗑️ Borrar
+                <Icono e="🗑️" /> Borrar
               </button>
             )}
             <button onClick={() => setSeleccionados(new Set())} className="text-xs text-slate-500 hover:text-morado px-2">
@@ -303,12 +293,12 @@ export default function Censo() {
             <div className="flex gap-2">
               {puedeEditar && (
                 <button onClick={() => setEditando({ ...costaleroVacio() })} className="btn-oro">
-                  ➕ Añadir el primero
+                  <Icono e="➕" /> Añadir el primero
                 </button>
               )}
               {puedeImportar && (
                 <button onClick={() => setModalImportar(true)} className="btn-ghost">
-                  📥 Importar datos.json
+                  <Icono e="📥" /> Importar datos.json
                 </button>
               )}
             </div>
@@ -317,7 +307,7 @@ export default function Censo() {
           <Vacio icono="🔍" titulo="Sin resultados" texto="Prueba a cambiar la búsqueda o los filtros." />
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full text-sm whitespace-nowrap">
               <thead className="bg-slate-50 border-b border-slate-200">
                 <tr>
                   <th className="w-10 px-3 py-3">
@@ -369,8 +359,8 @@ export default function Censo() {
                     <td className="px-3 py-2.5 text-slate-600 tabular-nums">
                       {c.telefono || <span className="text-slate-300">—</span>}
                     </td>
-                    <td className="px-3 py-2.5 text-center">{c.miercoles_santo ? '✅' : '—'}</td>
-                    <td className="px-3 py-2.5 text-center">{c.viernes_santo ? '✅' : '—'}</td>
+                    <td className="px-3 py-2.5 text-center">{c.miercoles_santo ? '✓' : '—'}</td>
+                    <td className="px-3 py-2.5 text-center">{c.viernes_santo ? '✓' : '—'}</td>
                     <td className="px-3 py-2.5 text-center">
                       {c.cruz_miercoles
                         ? <span className="text-sky-600 font-bold">✚</span>
@@ -397,7 +387,7 @@ export default function Censo() {
                         className="text-slate-400 hover:text-morado px-1.5 py-1 rounded hover:bg-slate-100 transition"
                         title={puedeEditar ? 'Editar' : 'Ver ficha'}
                       >
-                        {puedeEditar ? '✏️' : '👁️'}
+                        <Icono e={puedeEditar ? '✏️' : '👁️'} />
                       </button>
                     </td>
                   </tr>
@@ -464,7 +454,7 @@ function Th({ col, orden, onClick, children, centro }) {
 
 function formatearExtra(valor, tipo) {
   if (valor === undefined || valor === null || valor === '') return <span className="text-slate-300">—</span>
-  if (tipo === 'si_no') return valor ? '✅' : '—'
+  if (tipo === 'si_no') return valor ? '✓' : '—'
   return String(valor)
 }
 
@@ -558,7 +548,7 @@ function FichaCostalero({ costalero, camposExtra, soloLectura, puedeBorrar, onCe
             onChange={(v) => set('viernes_santo', v)}
           />
           <Check
-            label="🔁  Puede repetir turno"
+            label="Puede repetir turno"
             checked={f.puede_repetir}
             onChange={(v) => set('puede_repetir', v)}
             ayuda="Si lo desmarcas, el generador nunca lo pondrá dos veces."
@@ -623,7 +613,7 @@ function FichaCostalero({ costalero, camposExtra, soloLectura, puedeBorrar, onCe
               onClick={() => onBorrar(costalero.id, costalero.nombre)}
               className="btn-rojo"
             >
-              🗑️ Borrar
+              <Icono e="🗑️" /> Borrar
             </button>
           )}
           <div className="flex-1" />
@@ -728,7 +718,7 @@ function GestorCampos({ abierto, campos, onCerrar, onCambio, avisar }) {
                 onClick={() => borrar(c.clave, c.etiqueta)}
                 className="text-red-400 hover:text-red-600 px-1"
               >
-                🗑️
+                <Icono e="🗑️" />
               </button>
             </div>
           ))}
@@ -812,7 +802,7 @@ function ImportarCenso({ abierto, onCerrar, onImportado, avisar, hayDatos }) {
                     <td className="px-3 py-1.5 font-medium">{p.nombre}</td>
                     <td className="px-3 py-1.5 text-slate-500 text-right">{p.altura} cm</td>
                     <td className="px-3 py-1.5 text-center w-16">
-                      {p.miercoles_santo ? '🕯️' : ''} {p.viernes_santo ? '✝️' : ''}
+                      {p.miercoles_santo ? 'M' : ''} {p.viernes_santo ? 'V' : ''}
                     </td>
                   </tr>
                 ))}

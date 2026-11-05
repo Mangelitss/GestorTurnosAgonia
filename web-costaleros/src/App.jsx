@@ -6,12 +6,13 @@
 //  Solo muestra lo que el cuadrillero ha publicado desde el panel
 //  (modulo "Web costaleros"), y solo mientras la tenga visible.
 //
-//  Pensada sobre todo para el movil: lo primero que se ve son los
-//  avisos, las horas y el buscador; la barra de apartados se queda
-//  fija arriba al bajar; y el cuadrante se ve turno a turno.
+//  Pensada para el movil: lo primero que se ve son los avisos, las
+//  horas y el buscador; los apartados van abajo, al alcance del
+//  pulgar; y el cuadrante se ve turno a turno.
 // =============================================================
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import {
   leerPortal, claveRecordada, recordarClave, personasDe,
 } from './lib/datos'
@@ -27,7 +28,7 @@ import CuadranteTurno from './components/CuadranteTurno'
 import Recorrido from './components/Recorrido'
 import InfoPublicacion, { TenerEnCuenta } from './components/InfoPublicacion'
 import Leyenda from './components/Leyenda'
-import { Cargando, Aviso, Vacio } from './components/ui'
+import { Cargando, Aviso, Vacio, Cruz, Filete } from './components/ui'
 
 // Se recuerda el NOMBRE, no el id: los ids cambian de una
 // publicacion a otra (son seudonimos), el nombre no.
@@ -120,13 +121,15 @@ export default function App() {
     recordarNombre(null)
   }
 
+  const conBarra = estado === 'dentro' && !!pub
+
   return (
-    <div className="min-h-screen px-3 pb-6 pt-[max(1rem,env(safe-area-inset-top))]
-                    pl-[max(0.75rem,env(safe-area-inset-left))] pr-[max(0.75rem,env(safe-area-inset-right))]
-                    sm:px-4 sm:py-10">
+    <div className={`min-h-dvh px-3 pt-[max(1.25rem,env(safe-area-inset-top))]
+                     pl-[max(0.75rem,env(safe-area-inset-left))] pr-[max(0.75rem,env(safe-area-inset-right))]
+                     ${conBarra ? 'pb-[calc(76px+env(safe-area-inset-bottom))]' : 'pb-6'}`}>
       <Cabecera />
 
-      <main className="folio">
+      <main className="folio animate-subir" style={{ animationDelay: '250ms' }}>
         {estado === 'comprobando' ? (
           <Cargando />
         ) : estado === 'error' ? (
@@ -156,7 +159,6 @@ export default function App() {
             {!pub ? (
               <div className="seccion">
                 <Vacio
-                  icono="—"
                   titulo="Todavía no hay nada publicado"
                   texto="Cuando el cuadrillero publique los turnos, aparecerán aquí."
                 />
@@ -185,18 +187,34 @@ export default function App() {
 
 // =============================================================
 //  CABECERA
+//  La cruz con luz de vela y, debajo, el nombre de la Mayordomia.
+//  Queda sobre la imagen, sin recuadro, para que se vea el Cristo.
 // =============================================================
 function Cabecera() {
   return (
-    <header className="mx-auto mb-4 max-w-3xl text-center sm:mb-6">
-      <h1 className="font-titulo text-[13px] font-bold uppercase leading-snug
-                     tracking-[0.06em] text-oro sm:text-lg sm:tracking-[0.08em]">
-        Muy Ilustre Mayordomía de<br className="sm:hidden" /> Ntro. Padre Jesús Nazareno
+    <header className="mx-auto mb-5 max-w-xl pt-2 text-center">
+      <div className="relative mx-auto mb-2 flex h-[54px] w-[54px] animate-aparecer items-center justify-center text-oro-pale">
+        <span
+          className="absolute -inset-3 animate-vela rounded-full"
+          style={{ background: 'radial-gradient(circle, rgba(232,208,140,0.34), rgba(232,208,140,0) 68%)' }}
+          aria-hidden="true"
+        />
+        <Cruz tam={46} className="relative drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]" />
+      </div>
+
+      <h1 className="animate-subir font-titulo text-[13.5px] font-semibold uppercase leading-snug
+                     tracking-[0.08em] text-oro-pale [text-shadow:0_1px_6px_rgba(0,0,0,0.9)]">
+        Muy Ilustre Mayordomía de<br />Ntro. Padre Jesús Nazareno
       </h1>
-      <p className="mt-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-oro-light/60 sm:mt-2 sm:text-[13px]">
-        Tercio del Cristo de la Agonía
+
+      <Filete className="mx-auto my-2.5 max-w-[220px]" />
+
+      <p className="animate-subir font-texto text-[18px] leading-tight text-crema
+                    [text-shadow:0_1px_6px_rgba(0,0,0,0.9)]" style={{ animationDelay: '120ms' }}>
+        Tercio del Santísimo Cristo de la Agonía
       </p>
-      <p className="mt-0.5 text-[10px] uppercase tracking-[0.18em] text-oro-light/35 sm:text-[11px]">
+      <p className="animate-subir font-texto text-[15px] italic text-oro-light/80
+                    [text-shadow:0_1px_6px_rgba(0,0,0,0.9)]" style={{ animationDelay: '200ms' }}>
         y María Magdalena · Orihuela
       </p>
     </header>
@@ -214,17 +232,17 @@ function etiquetaPestana(p) {
 
 function Pestanas({ publicaciones, seleccion, onSeleccionar }) {
   return (
-    <nav className="sin-barra flex gap-2 overflow-x-auto border-b border-oro/25 bg-morado-black/50 p-2.5 sm:flex-wrap sm:p-3">
+    <nav className="sin-barra flex overflow-x-auto border-b border-oro/30 bg-morado-black/60 px-1">
       {publicaciones.map((p) => {
         const { texto, extra } = etiquetaPestana(p)
         return (
           <button
             key={p.id}
             onClick={() => onSeleccionar(p.id)}
-            className={`pestana shrink-0 ${seleccion === p.id ? 'pestana-activa' : ''}`}
+            className={`pestana ${seleccion === p.id ? 'pestana-activa' : ''}`}
           >
             {texto}
-            {extra && <span className="ml-1 opacity-60">{extra}</span>}
+            {extra && <span className="ml-1.5 opacity-60">{extra}</span>}
           </button>
         )
       })}
@@ -235,10 +253,15 @@ function Pestanas({ publicaciones, seleccion, onSeleccionar }) {
 // =============================================================
 //  UNA PROCESION O UN ENSAYO
 // =============================================================
+const ICONOS_APARTADO = {
+  mia: 'M12 11.5a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM4.5 20.5v-1a6 6 0 0 1 6-6h3a6 6 0 0 1 6 6v1',
+  cuadrante: 'M4 4h16v16H4V4ZM4 12h16M9.5 4v16M14.5 4v16',
+  recorrido: 'M6.5 20.5a2 2 0 1 0 0-4 2 2 0 0 0 0 4ZM17.5 7.5a2 2 0 1 0 0-4 2 2 0 0 0 0 4ZM6.5 16.5V9a3.5 3.5 0 0 1 3.5-3.5h5.5M17.5 7.5V15a3.5 3.5 0 0 1-3.5 3.5H8.5',
+}
+
 function Publicacion({ pub, personas, marcas, yo, apartado, onApartado, onElegir, onOlvidar }) {
   const esEnsayo = pub.clase === 'ensayo'
-  // Marca invisible justo encima de la barra. La barra pegada siempre
-  // dice top = 0; la marca dice donde estaria si no lo estuviera.
+  // Marca invisible justo encima del contenido de cada apartado
   const marca = useRef(null)
   const primeraVez = useRef(true)
 
@@ -247,9 +270,10 @@ function Publicacion({ pub, personas, marcas, yo, apartado, onApartado, onElegir
     { id: 'cuadrante', texto: 'Cuadrante' },
     ...(esEnsayo ? [] : [{ id: 'recorrido', texto: 'Recorrido' }]),
   ]
+  const indice = Math.max(0, apartados.findIndex((a) => a.id === apartado))
 
-  // Si se cambia de apartado con la barra ya pegada arriba, se sube
-  // al principio del contenido nuevo en vez de dejarte a media pagina.
+  // Si se cambia de apartado estando abajo, se sube al principio del
+  // contenido nuevo en vez de dejarte a media pagina.
   // Va despues de pintar: el contenido nuevo puede ser mas corto.
   useEffect(() => {
     if (primeraVez.current) { primeraVez.current = false; return }
@@ -261,13 +285,15 @@ function Publicacion({ pub, personas, marcas, yo, apartado, onApartado, onElegir
 
   return (
     <>
-      <div className="seccion space-y-3.5 pb-3.5 sm:pb-4">
-        <div className="text-center">
-          <h2 className="font-titulo text-lg font-bold uppercase leading-tight tracking-wide text-crema sm:text-xl">
+      <div className="seccion space-y-4 pb-4">
+        <div className="animate-subir text-center">
+          <h2 className="font-titulo text-[20px] font-semibold uppercase leading-tight tracking-[0.06em] text-crema">
             {pub.nombre}
           </h2>
           {pub.fecha_iso && (
-            <p className="mt-1 text-[13px] text-oro-light/60 sm:text-sm">{fechaLarga(pub.fecha_iso)}</p>
+            <p className="mt-1 font-texto text-[17px] italic text-oro-light/80 first-letter:uppercase">
+              {fechaLarga(pub.fecha_iso)}
+            </p>
           )}
         </div>
 
@@ -275,31 +301,10 @@ function Publicacion({ pub, personas, marcas, yo, apartado, onApartado, onElegir
         {esEnsayo && <TenerEnCuenta texto={pub.info?.tener_en_cuenta} />}
       </div>
 
-      {/* ---- Apartados: se quedan fijos arriba al bajar ---- */}
       <div ref={marca} aria-hidden="true" />
-      <div
-        className="sticky top-0 z-20 border-y border-oro/20 bg-morado-deep/95 px-3 py-2
-                   pt-[max(0.5rem,env(safe-area-inset-top))] backdrop-blur sm:px-7"
-      >
-        <div className="flex gap-1.5 rounded-lg bg-morado-black/60 p-1">
-          {apartados.map((a) => (
-            <button
-              key={a.id}
-              onClick={() => onApartado(a.id)}
-              className={`min-h-[42px] flex-1 whitespace-nowrap rounded-md px-1 text-[12px] font-bold
-                          uppercase tracking-wide transition-colors min-[360px]:px-2 min-[360px]:text-[13px] ${
-                            apartado === a.id
-                              ? 'bg-morado text-oro-light shadow'
-                              : 'text-oro-light/50 active:bg-morado/40'
-                          }`}
-            >
-              {a.texto}
-            </button>
-          ))}
-        </div>
-      </div>
 
-      <div className="seccion pt-4 sm:pt-5">
+      {/* key: cada apartado entra con su propio fundido */}
+      <div key={apartado} className="seccion animate-aparecer border-t border-oro/20 pt-5">
         {apartado === 'mia' && (
           !yo ? (
             <Buscador personas={personas} onElegir={onElegir} />
@@ -316,6 +321,39 @@ function Publicacion({ pub, personas, marcas, yo, apartado, onApartado, onElegir
 
         {apartado === 'recorrido' && !esEnsayo && <Recorrido procesion={pub} />}
       </div>
+
+      {/* ---- Apartados: abajo, al alcance del pulgar ---- */}
+      {createPortal(
+        <nav className="barra-apartados animate-aparecer" aria-label="Apartados">
+          <span
+            className="absolute left-0 top-[-1px] h-[2px] bg-oro-pale transition-transform duration-700 ease-solemne"
+            style={{
+              width: `${100 / apartados.length}%`,
+              transform: `translateX(${indice * 100}%)`,
+            }}
+            aria-hidden="true"
+          />
+          <div className="flex">
+            {apartados.map((a) => (
+              <button
+                key={a.id}
+                onClick={() => onApartado(a.id)}
+                aria-current={apartado === a.id ? 'page' : undefined}
+                className="apartado"
+              >
+                <svg
+                  width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                  strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"
+                >
+                  <path d={ICONOS_APARTADO[a.id]} />
+                </svg>
+                {a.texto}
+              </button>
+            ))}
+          </div>
+        </nav>,
+        document.body
+      )}
     </>
   )
 }
@@ -353,7 +391,6 @@ function CuadranteCompleto({ pub, marcas, resaltarId }) {
   if (!grupos.length) {
     return (
       <Vacio
-        icono="—"
         titulo="Cuadrante sin generar"
         texto="Todavía no se han repartido los turnos."
       />
@@ -365,15 +402,15 @@ function CuadranteCompleto({ pub, marcas, resaltarId }) {
   const turno = grupo.cuadrante.find((t) => String(t.id) === turnoSel) || grupo.cuadrante[0]
 
   return (
-    <div className="animate-subir space-y-4">
+    <div className="space-y-4">
       {/* ---- Selector de turno ---- */}
-      <div className="space-y-2">
+      <div className="space-y-2.5">
         {grupos.map(({ pieza, titulo, cuadrante }) => (
-          <div key={pieza} className="flex items-center gap-2">
-            <span className="w-12 shrink-0 text-[10px] font-bold uppercase tracking-wide text-oro-light/50">
+          <div key={pieza} className="flex items-center gap-2.5">
+            <span className="etiqueta w-12 shrink-0 !text-[9.5px]">
               {titulo}
             </span>
-            <div className="sin-barra flex flex-1 gap-1.5 overflow-x-auto">
+            <div className="sin-barra flex flex-1 gap-2 overflow-x-auto py-1.5 pr-1">
               {cuadrante.map((t) => {
                 const clave = `${pieza}-${t.id}`
                 const activo = grupo.pieza === pieza && turno.id === t.id
@@ -382,18 +419,18 @@ function CuadranteCompleto({ pub, marcas, resaltarId }) {
                   <button
                     key={clave}
                     onClick={() => setElegido(clave)}
-                    className={`relative h-10 min-w-[44px] shrink-0 rounded-lg border px-3 text-sm font-bold
-                                transition-colors ${
+                    className={`relative h-11 min-w-[44px] shrink-0 rounded-full border px-3 font-titulo text-[14px]
+                                font-semibold transition-colors duration-500 ${
                                   activo
                                     ? pieza === 'cruz'
-                                      ? 'border-sky-400 bg-sky-500 text-white'
-                                      : 'border-oro bg-oro text-morado-black'
-                                    : 'border-morado-light/40 text-oro-light/70 active:bg-morado/40'
+                                      ? 'border-sky-300 bg-sky-500 text-white'
+                                      : 'border-oro-pale bg-oro text-morado-black'
+                                    : 'border-oro/30 bg-morado-black/40 text-oro-light/75'
                                 }`}
                   >
                     {t.id}
                     {mio && (
-                      <span className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-oro ring-2 ring-morado-deep"
+                      <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full bg-oro-pale ring-2 ring-morado-deep"
                             title="Vas en este turno" />
                     )}
                   </button>
@@ -415,7 +452,7 @@ function CuadranteCompleto({ pub, marcas, resaltarId }) {
       />
 
       {resaltarId && mios.size === 0 && (
-        <p className="text-center text-xs text-oro-light/40">No apareces en ningún turno.</p>
+        <p className="text-center font-texto text-[15px] italic text-oro-light/55">No apareces en ningún turno.</p>
       )}
     </div>
   )
@@ -426,8 +463,8 @@ function CuadranteCompleto({ pub, marcas, resaltarId }) {
 // =============================================================
 function Pie({ onSalir }) {
   return (
-    <footer className="mx-auto mt-6 max-w-3xl px-2 pb-[env(safe-area-inset-bottom)] text-center sm:mt-8">
-      <p className="text-[11px] leading-relaxed text-oro-light/30">
+    <footer className="mx-auto mt-6 max-w-xl px-2 text-center">
+      <p className="font-texto text-[14.5px] leading-snug text-oro-light/55 [text-shadow:0_1px_4px_rgba(0,0,0,0.9)]">
         Cuadrante oficial publicado por el cuadrillero del tercio.
         <br />
         Ante cualquier duda, habla con él antes del día de la procesión.
@@ -435,8 +472,8 @@ function Pie({ onSalir }) {
       {onSalir && (
         <button
           onClick={onSalir}
-          className="mt-3 px-3 py-2 text-[11px] font-semibold uppercase tracking-wide text-oro-light/40
-                     underline-offset-4 hover:text-oro-light hover:underline"
+          className="mt-2 min-h-[44px] px-3 font-titulo text-[10.5px] font-semibold uppercase tracking-[0.08em]
+                     text-oro-light/55 transition-colors duration-500 hover:text-oro-light"
         >
           Salir de este móvil
         </button>

@@ -26,8 +26,9 @@ import { estadisticasTurno, FLEXION_VARA_CM } from '../lib/estadisticas'
 import Trono from './Trono'
 import SelectorAlgoritmo from './SelectorAlgoritmo'
 import { LeyendaCalor } from './EstadisticasTurno'
-import { Modal, Alerta, Vacio } from './ui'
+import { Modal, Alerta, Vacio, Segmentado } from './ui'
 
+import { Icono } from './Iconos'
 export default function PestanaTurnos({
   procesion,
   censo,
@@ -179,7 +180,7 @@ export default function PestanaTurnos({
     }
 
     const texto = bloqueados
-      ? `¿Vaciar el Turno ${cuadrante[t].id}?\n\nSe quitarán ${quitables} costalero(s).\n🔒 ${bloqueados} bloqueado(s) se mantendrán.`
+      ? `¿Vaciar el Turno ${cuadrante[t].id}?\n\nSe quitarán ${quitables} costalero(s).\n${bloqueados} bloqueado(s) se mantendrán.`
       : `¿Vaciar el Turno ${cuadrante[t].id}?\n\nSe quitarán ${quitables} costalero(s).`
 
     if (!confirm(texto)) return
@@ -246,26 +247,25 @@ export default function PestanaTurnos({
 
       {/* ---- Selector de pieza ---- */}
       {llevaCruz && (
-        <div className="flex gap-1 bg-slate-100 rounded-lg p-1 w-fit">
-          {['trono', 'cruz'].map((p) => {
+        <Segmentado
+          valor={pieza}
+          onCambiar={setPieza}
+          opciones={['trono', 'cruz'].map((p) => {
             const info = PIEZAS[p]
             const cuad = p === 'cruz' ? procesion.cuadrante_cruz : procesion.cuadrante_trono
             const n = cuad ? ocupantes(cuad).length : 0
-            return (
-              <button
-                key={p}
-                onClick={() => setPieza(p)}
-                className={`px-4 py-2 rounded-md text-sm font-semibold transition flex items-center gap-2 ${
-                  pieza === p ? 'bg-white text-morado shadow-sm' : 'text-slate-600 hover:text-morado'
-                }`}
-              >
-                <span className={`w-2 h-2 rounded-full ${info.punto}`} />
-                {info.nombre}
-                <span className="text-xs text-slate-400">({n})</span>
-              </button>
-            )
+            return {
+              id: p,
+              label: (
+                <>
+                  <span className={`w-2 h-2 rounded-full ${info.punto}`} />
+                  {info.nombre}
+                  <span className="text-xs text-slate-400">({n})</span>
+                </>
+              ),
+            }
           })}
-        </div>
+        />
       )}
 
       {/* ---- Barra de control ---- */}
@@ -285,11 +285,11 @@ export default function PestanaTurnos({
                 </span>
               )}
               {stats.bloqueadas > 0 && (
-                <span className="chip bg-morado/10 text-morado">🔒 {stats.bloqueadas}</span>
+                <span className="chip bg-morado/10 text-morado"><Icono e="🔒" /> {stats.bloqueadas}</span>
               )}
               {statsHombro?.mal > 0 && (
                 <span className="chip bg-red-100 text-red-700 animate-pulse-fast">
-                  ⚠️ {statsHombro.mal} hombro(s) mal
+                  <Icono e="⚠️" /> {statsHombro.mal} hombro(s) mal
                 </span>
               )}
             </>
@@ -303,7 +303,7 @@ export default function PestanaTurnos({
               className={mapaCalor ? 'btn-oro text-xs' : 'btn-ghost text-xs'}
               title="Colorea a cada costalero según los kilos que soporta"
             >
-              {mapaCalor ? '🔥 Mapa de peso: ON' : '🧊 Mapa de peso'}
+              {mapaCalor ? 'Mapa de peso: ON' : 'Mapa de peso'}
             </button>
           )}
 
@@ -315,12 +315,12 @@ export default function PestanaTurnos({
                 className="btn-ghost text-xs"
                 title="Comprueba que cada costalero lleve el hombro que le corresponde"
               >
-                💪 Comprobar hombros
+                <Icono e="💪" /> Comprobar hombros
               </button>
             )}
             {cuadrante && pieza === 'trono' && stats.libres > 0 && (
               <button onClick={meterRepetidores} className="btn-ghost text-xs">
-                🔁 Rellenar con repetidores
+                <Icono e="🔁" /> Rellenar con repetidores
               </button>
             )}
             {cuadrante && pieza === 'cruz' && stats.libres > 0 && (
@@ -356,7 +356,7 @@ export default function PestanaTurnos({
               onClick={() => setModalGenerar(pieza)}
               className="btn-morado text-xs"
             >
-              {cuadrante ? '🔄 Regenerar' : '⚙️ Generar turnos'}
+              {cuadrante ? 'Regenerar' : 'Generar turnos'}
             </button>
             </>
           )}
@@ -405,7 +405,7 @@ export default function PestanaTurnos({
           >
             {!soloLectura && candidatos.length > 0 && (
               <button onClick={() => setModalGenerar(pieza)} className="btn-oro">
-                ⚙️ Generar turnos
+                <Icono e="⚙️" /> Generar turnos
               </button>
             )}
           </Vacio>

@@ -2,6 +2,13 @@
 @tailwind components;
 @tailwind utilities;
 
+/* =============================================================
+   PORTAL DEL COSTALERO
+   Pensado para el movil. Estetica de Semana Santa: morado de la
+   Mayordomia, oro viejo, capitales romanas y filetes de orfebreria
+   sobre la imagen del Santisimo Cristo de la Agonia.
+   ============================================================= */
+
 @layer base {
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
@@ -52,59 +59,116 @@
 }
 
 @layer components {
-  /* --- Contenedor tipo folio, como en el portal antiguo --- */
+  /* --- El folio: deja ver la imagen a traves, con doble filete --- */
   .folio {
-    @apply mx-auto w-full max-w-3xl bg-morado-deep/85 backdrop-blur-sm
-           border border-oro/25 rounded-xl shadow-2xl shadow-black/60
-           overflow-clip;
+    @apply relative mx-auto w-full max-w-xl bg-morado-deep/[0.62] rounded-sm overflow-clip;
+    box-shadow:
+      0 0 0 1px rgba(209, 181, 20, 0.45),
+      0 0 0 4px rgba(12, 2, 9, 0.55),
+      0 0 0 5px rgba(209, 181, 20, 0.22),
+      0 24px 60px rgba(0, 0, 0, 0.55);
   }
 
-  .seccion {
-    @apply px-3.5 py-4 sm:px-7 sm:py-6;
-  }
+  .seccion { @apply px-4 py-5 sm:px-7 sm:py-6; }
 
   .titulo {
-    @apply font-titulo font-bold uppercase tracking-wide text-oro-light;
+    @apply font-titulo font-semibold uppercase tracking-[0.1em] text-oro-light;
   }
 
-  /* --- Pestañas --- */
+  /* --- Pestañas de cada publicacion --- */
   .pestana {
-    @apply flex-1 min-w-[110px] rounded-lg border border-morado-light/40
-           bg-transparent px-3 py-2.5 text-center text-[13px] font-bold uppercase
-           tracking-wide text-oro-light/60 transition-colors duration-200
-           cursor-pointer select-none hover:text-oro-light hover:border-oro/40;
+    @apply relative shrink-0 px-3.5 pb-3 pt-3.5 font-titulo text-[12px] font-semibold uppercase
+           tracking-[0.1em] text-oro-light/55 cursor-pointer select-none whitespace-nowrap;
+    transition: color 0.5s ease;
   }
-  .pestana-activa {
-    @apply border-oro bg-oro text-morado-black hover:text-morado-black;
+  .pestana::after {
+    content: '';
+    position: absolute;
+    left: 12px;
+    right: 12px;
+    bottom: 0;
+    height: 2px;
+    background: #D1B514;
+    transform: scaleX(0);
+    transition: transform 0.6s cubic-bezier(0.22, 0.61, 0.36, 1);
   }
+  .pestana-activa { @apply text-oro-pale; }
+  .pestana-activa::after { transform: scaleX(1); }
 
   /* --- Botones --- */
   .btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5
-           text-sm font-bold transition-colors duration-200 cursor-pointer
-           disabled:opacity-40 disabled:cursor-not-allowed select-none;
+    @apply inline-flex items-center justify-center gap-2 px-5 font-titulo text-[13px] font-semibold
+           uppercase tracking-[0.1em] cursor-pointer select-none rounded-sm
+           disabled:opacity-40 disabled:cursor-not-allowed;
+    min-height: 48px;
+    transition: background-color 0.4s ease, color 0.4s ease, border-color 0.4s ease,
+                opacity 0.4s ease, transform 0.35s cubic-bezier(0.22, 0.61, 0.36, 1);
   }
-  .btn-oro { @apply btn bg-oro text-morado-black hover:bg-oro-light; }
+  .btn:active:not(:disabled) { transform: scale(0.985); }
+  .btn-oro {
+    @apply btn text-morado-black hover:bg-oro-pale;
+    background: linear-gradient(180deg, #e3c938 0%, #D1B514 55%, #b89f10 100%);
+  }
   .btn-linea {
-    @apply btn border border-oro/40 text-oro-light hover:bg-oro/10;
+    @apply btn border border-oro/45 text-oro-light hover:bg-oro/10;
   }
+  .btn-discreto {
+    @apply inline-flex items-center justify-center rounded-sm border border-oro/35 px-3 font-titulo
+           text-[11px] font-semibold uppercase tracking-[0.08em] text-oro-light/80 cursor-pointer;
+    min-height: 40px;
+    transition: background-color 0.4s ease;
+  }
+  .btn-discreto:active { background-color: rgba(209, 181, 20, 0.12); }
 
-  /* --- Campo de busqueda --- */
+  /* --- Campo de texto --- */
   .campo {
-    @apply w-full rounded-lg border border-morado-light/50 bg-morado-black/70
-           px-4 py-3 text-base text-crema placeholder-oro-light/30
-           outline-none transition focus:border-oro focus:ring-2 focus:ring-oro/20;
+    @apply w-full rounded-sm border border-oro/35 bg-morado-black/75 px-4 text-base text-crema
+           placeholder-oro-light/35 outline-none;
+    min-height: 50px;
+    transition: border-color 0.5s ease, box-shadow 0.5s ease;
   }
+  .campo:focus { border-color: #D1B514; box-shadow: 0 0 0 3px rgba(209, 181, 20, 0.16); }
 
-  /* --- Tarjetas --- */
-  .tarjeta {
-    @apply rounded-lg border border-oro/20 bg-morado-dark/60 p-4;
+  /* --- Cartela: recuadro con filete interior y esquinas --- */
+  .cartela {
+    @apply relative rounded-sm bg-morado-black/60;
+    box-shadow: inset 0 0 0 1px rgba(209, 181, 20, 0.4), inset 0 0 0 4px rgba(12, 2, 9, 0.6),
+                inset 0 0 0 5px rgba(209, 181, 20, 0.14);
   }
 
   .etiqueta {
-    @apply text-[11px] font-bold uppercase tracking-[0.12em] text-oro-light/50;
+    @apply font-titulo text-[10.5px] font-semibold uppercase tracking-[0.14em] text-oro-light/60;
   }
+
+  /* --- Texto corrido de la Mayordomia --- */
+  .prosa {
+    @apply font-texto text-[17px] leading-[1.45] text-crema/90;
+  }
+
+  /* --- Barra inferior de apartados --- */
+  .barra-apartados {
+    @apply fixed inset-x-0 bottom-0 z-30 mx-auto max-w-xl bg-morado-black;
+    border-top: 1px solid rgba(209, 181, 20, 0.45);
+    box-shadow: 0 -12px 30px rgba(0, 0, 0, 0.5);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .apartado {
+    @apply relative flex flex-1 flex-col items-center justify-center gap-1 font-titulo text-[10.5px]
+           font-semibold uppercase tracking-[0.08em] text-oro-light/50 cursor-pointer select-none;
+    min-height: 60px;
+    transition: color 0.5s ease;
+  }
+  .apartado[aria-current='page'] { @apply text-oro-pale; }
 }
+
+/* Aparece al entrar en pantalla (ver componente Revelar) */
+.revelar {
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 0.9s cubic-bezier(0.22, 0.61, 0.36, 1), transform 0.9s cubic-bezier(0.22, 0.61, 0.36, 1);
+  transition-delay: var(--retraso, 0ms);
+}
+.revelar-visto { opacity: 1; transform: none; }
 
 ::-webkit-scrollbar { width: 9px; height: 9px; }
 ::-webkit-scrollbar-track { background: #1a0514; }
@@ -114,3 +178,15 @@
 /* Tiras que se deslizan en horizontal (pestañas, turnos) sin barra visible */
 .sin-barra { scrollbar-width: none; -webkit-overflow-scrolling: touch; }
 .sin-barra::-webkit-scrollbar { display: none; }
+
+/* Quien pide menos movimiento, lo tiene */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0ms !important;
+  }
+  .revelar { opacity: 1; transform: none; }
+}

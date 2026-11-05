@@ -8,7 +8,7 @@ import { Page, PageHeader, Vacio } from '../components/ui'
 export default function EnConstruccion({ titulo, icono, descripcion, puntos = [] }) {
   return (
     <Page>
-      <PageHeader titulo={titulo} icono={icono} subtitulo={descripcion} />
+      <PageHeader titulo={titulo} subtitulo={descripcion} />
 
       <div className="card">
         <Vacio
