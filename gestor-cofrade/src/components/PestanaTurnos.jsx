@@ -8,9 +8,11 @@ import {
   intercambiar, quitarDe, alternarBloqueo, colocarEn, anadirHueco,
   quitarHueco, anadirTurno, quitarTurno, resumen, ocupantes,
   idsColocados, rellenarConRepetidores, rellenarCruz, varasDe,
-  limpiarTurno, contarLimpieza,
+  limpiarTurno, contarLimpieza, alternarBloqueoTurno, leerPos, huecos,
 } from '../lib/cuadrante'
+import { completarHuecos } from '../lib/completarHuecos'
 import ModalOrdenProcesional from './ModalOrdenProcesional'
+import PanelCostaleros, { ModalCompletar } from './PanelCostaleros'
 import {
   candidatosTrono, candidatosCruz, candidatosRellenarCruz, comoOcupante, letrasTurno,
 } from '../lib/procesiones'
@@ -42,6 +44,7 @@ export default function PestanaTurnos({
   const [hueco, setHueco] = useState(null)      // { pieza, ref }
   const [infoPersona, setInfoPersona] = useState(null)
   const [mapaCalor, setMapaCalor] = useState(false)
+  const [vistaCompletar, setVistaCompletar] = useState(null)
 
   const llevaCruz = procesion.lleva_cruz !== false
 
@@ -71,6 +74,30 @@ export default function PestanaTurnos({
   }, [censo, procesion.tipo, procesion.cuadrante_cruz, procesion.cuadrante_trono])
 
   const candidatos = pieza === 'cruz' ? aptosCruz : aptosTrono
+
+  // --- Lista lateral: quien esta apuntado y en que turnos va ---
+  const asignaciones = useMemo(() => {
+    const m = {}
+    const anotar = (cuad, nombre) => {
+      if (!cuad) return
+      ocupantes(cuad).forEach(({ ref, p }) => {
+        if (!p.costalero_id) return
+        ;(m[p.costalero_id] ||= []).push({ pieza: nombre, turno: cuad[ref.t].id })
+      })
+    }
+    anotar(procesion.cuadrante_trono, 'trono')
+    anotar(procesion.cuadrante_cruz, 'cruz')
+    return m
+  }, [procesion.cuadrante_trono, procesion.cuadrante_cruz])
+
+  const apuntados = useMemo(() => {
+    const porId = new Map()
+    ;[...aptosTrono, ...aptosCruz].forEach((c) => porId.set(c.id, c))
+    Object.keys(asignaciones).forEach((id) => {
+      if (censoPorId[id]) porId.set(id, censoPorId[id])
+    })
+    return [...porId.values()]
+  }, [aptosTrono, aptosCruz, asignaciones, censoPorId])
   const stats = cuadrante ? resumen(cuadrante) : null
 
   // --- Hombros ---
@@ -164,6 +191,56 @@ export default function PestanaTurnos({
     )
   }
 
+  // --- Soltar en un puesto a alguien de la lista lateral ---
+  const soltarCostalero = (id, ref) => {
+    const c = censoPorId[id]
+    if (!c || !cuadrante) return
+    const actual = leerPos(cuadrante, ref)
+    if (actual?.costalero_id === id) return
+    if (actual?.bloqueado) return avisar('Esa posición está bloqueada.', 'error')
+
+    const yaEnEste = ocupantes(cuadrante).some(
+      (x) => x.ref.t === ref.t && x.p.costalero_id === id
+    )
+    if (yaEnEste) return avisar(`${c.nombre} ya está en este turno.`, 'error')
+
+    if (actual && !confirm(`¿Sustituir a ${actual.nombre} por ${c.nombre}?`)) return
+
+    const yaEnPieza = ocupantes(cuadrante).some((x) => x.p.costalero_id === id)
+    const persona = comoOcupante(c)
+    if (yaEnPieza) persona.repetidor = true
+    aplicar(colocarEn(cuadrante, ref, persona))
+
+    const otros = asignaciones[id] || []
+    if (otros.length) {
+      avisar(`${c.nombre} ya estaba en ${otros.map((a) => `${a.pieza === 'cruz' ? 'Cruz' : 'Trono'} ${a.turno}`).join(', ')}.`, 'info')
+    }
+  }
+
+  // --- Completar huecos: solo prepara la vista previa ---
+  const prepararCompletar = (conRepetidores) => {
+    if (!cuadrante) return
+    const base = pieza === 'cruz' ? [...aptosCruz, ...paraRellenarCruz.sueltos] : aptosTrono
+    const sinAsignar = base.filter((c) => !asignaciones[c.id]?.length).map(comoOcupante)
+
+    const vistos = new Set()
+    const repetidores = conRepetidores
+      ? ocupantes(cuadrante)
+        .map((x) => x.p)
+        .filter((p) => p.costalero_id && !p.repetidor)
+        .filter((p) => censoPorId[p.costalero_id]?.puede_repetir !== false)
+        .filter((p) => !vistos.has(p.costalero_id) && vistos.add(p.costalero_id))
+      : []
+
+    setVistaCompletar(completarHuecos(cuadrante, sinAsignar, { censoPorId, repetidores }))
+  }
+
+  const aplicarCompletar = () => {
+    setCuadrante(vistaCompletar.cuadrante)
+    avisar(`${vistaCompletar.colocados.length} costalero(s) colocados.`)
+    setVistaCompletar(null)
+  }
+
   // --- Limpiar un turno ---
   const limpiar = (t) => {
     if (!cuadrante) return
@@ -242,7 +319,8 @@ export default function PestanaTurnos({
   // =============================================================
 
   return (
-    <div className="space-y-5">
+    <div className="flex items-start gap-4">
+    <div className="flex-1 min-w-0 space-y-5">
 
       {/* ---- Selector de pieza ---- */}
       {llevaCruz && (
@@ -442,6 +520,8 @@ export default function PestanaTurnos({
           onAnadirHueco={(t, vara, sec) => setCuadrante(anadirHueco(cuadrante, t, vara, sec))}
           onQuitarHueco={(t, vara, sec) => aplicar(quitarHueco(cuadrante, t, vara, sec))}
           onLimpiarTurno={limpiar}
+          onBloquearTurno={(t) => aplicar(alternarBloqueoTurno(cuadrante, t))}
+          onSoltarCostalero={soltarCostalero}
           onInfoCostalero={setInfoPersona}
         />
       )}
@@ -477,6 +557,26 @@ export default function PestanaTurnos({
         onCerrar={() => setInfoPersona(null)}
         onCambiar={onCambiar}
       />
+
+      <ModalCompletar
+        resultado={vistaCompletar}
+        cuadrante={vistaCompletar?.cuadrante}
+        nombrePieza={PIEZAS[pieza].nombre}
+        onCerrar={() => setVistaCompletar(null)}
+        onAplicar={aplicarCompletar}
+      />
+    </div>
+
+    <PanelCostaleros
+      apuntados={apuntados}
+      asignaciones={asignaciones}
+      censoPorId={censoPorId}
+      nombrePieza={PIEZAS[pieza].nombre}
+      puedeArrastrar={!soloLectura && !!cuadrante}
+      puedeCompletar={!!cuadrante && huecos(cuadrante).length > 0}
+      soloLectura={soloLectura}
+      onCompletar={prepararCompletar}
+    />
     </div>
   )
 }

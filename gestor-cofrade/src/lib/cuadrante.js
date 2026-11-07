@@ -515,6 +515,22 @@ export function alternarBloqueo(cuadrante, ref) {
   return { cuadrante: c }
 }
 
+// Un turno esta bloqueado si tiene gente y toda ella esta bloqueada
+export function turnoBloqueado(cuadrante, t) {
+  const gente = ocupantes(cuadrante).filter((x) => x.ref.t === t)
+  return gente.length > 0 && gente.every((x) => x.p.bloqueado)
+}
+
+// Bloquea a todos los de un turno; si ya lo estaban, los desbloquea
+export function alternarBloqueoTurno(cuadrante, t) {
+  const c = clonar(cuadrante)
+  const bloquear = !turnoBloqueado(cuadrante, t)
+  ocupantes(c).filter((x) => x.ref.t === t).forEach(({ ref, p }) => {
+    escribirPos(c, ref, { ...p, bloqueado: bloquear })
+  })
+  return { cuadrante: c }
+}
+
 // Mete a alguien en el primer hueco libre disponible
 export function meterEnPrimerHueco(cuadrante, persona) {
   const libres = huecos(cuadrante)

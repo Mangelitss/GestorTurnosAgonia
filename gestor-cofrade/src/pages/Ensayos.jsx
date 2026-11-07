@@ -214,9 +214,15 @@ function TarjetaEnsayo({ ensayo, puedeEditar, onArchivar, onReabrir, onBorrar })
 
       {/* Datos rápidos */}
       <div className="flex gap-2 mb-4 flex-wrap">
-        <span className="chip bg-morado/10 text-morado">
-          👥 {numAsistentes} asistente{numAsistentes === 1 ? '' : 's'}
-        </span>
+        {ensayo.pase_lista ? (
+          <span className="chip bg-emerald-100 text-emerald-800">
+            ✅ {numAsistentes} de {numAsistentes + (ensayo.ausentes?.length || 0)} vinieron
+          </span>
+        ) : (
+          <span className="chip bg-morado/10 text-morado">
+            👥 {numAsistentes} asistente{numAsistentes === 1 ? '' : 's'}
+          </span>
+        )}
         {r ? (
           <>
             <span className="chip bg-oro/20 text-oro-dark">
