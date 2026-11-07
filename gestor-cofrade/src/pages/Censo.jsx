@@ -15,7 +15,7 @@ import {
 import { OPCIONES_HOMBRO } from '../lib/constantes'
 import { P } from '../lib/roles'
 import { useAuth } from '../context/AuthContext'
-import { Page, PageHeader, Cargando, Vacio, Modal, Alerta, Toast } from '../components/ui'
+import { Page, PageHeader, Cargando, Vacio, Modal, Alerta, Toast, Segmentado } from '../components/ui'
 
 export default function Censo() {
   const { puede } = useAuth()
@@ -226,27 +226,17 @@ export default function Censo() {
             />
           </div>
 
-          <div className="flex gap-1 bg-slate-100 rounded-lg p-1">
-            {[
+          <Segmentado
+            valor={filtro}
+            onCambiar={setFiltro}
+            opciones={[
               { id: 'todos', label: 'Todos' },
               { id: 'miercoles', label: 'Miércoles' },
               { id: 'viernes', label: 'Viernes' },
               { id: 'cruz', label: '✚ Cruz' },
               { id: 'ninguna', label: 'Sin apuntar' },
-            ].map((f) => (
-              <button
-                key={f.id}
-                onClick={() => setFiltro(f.id)}
-                className={`px-3 py-1.5 rounded-md text-xs font-semibold transition ${
-                  filtro === f.id
-                    ? 'bg-white text-morado shadow-sm'
-                    : 'text-slate-600 hover:text-morado'
-                }`}
-              >
-                {f.label}
-              </button>
-            ))}
-          </div>
+            ]}
+          />
 
           <span className="text-xs text-slate-500 whitespace-nowrap">
             {visibles.length} de {censo.length}
@@ -345,7 +335,7 @@ export default function Censo() {
                   <th className="w-16 px-3 py-3"></th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="filas-entrada divide-y divide-slate-100">
                 {visibles.map((c) => (
                   <tr
                     key={c.id}

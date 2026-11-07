@@ -75,7 +75,7 @@ export default function Login() {
       <div className="w-full max-w-md">
 
         {/* Cabecera */}
-        <div className="text-center mb-8">
+        <div className="text-center mb-8 animate-subir">
           <div className="text-5xl mb-3">✝️</div>
           <h1 className="font-serif text-3xl font-bold text-oro tracking-wide">
             GESTOR COFRADE
@@ -89,7 +89,8 @@ export default function Login() {
           </p>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-2xl p-8 border-t-4 border-oro">
+        <div className="bg-white rounded-2xl shadow-2xl p-8 border-t-4 border-oro animate-hoja-entra">
+          <div key={modo} className="animate-subir">
 
           {/* ---------- MODO LOGIN ---------- */}
           {modo === 'login' && (
@@ -245,6 +246,7 @@ export default function Login() {
               </button>
             </>
           )}
+          </div>
         </div>
 
         <p className="text-center text-oro-light/30 text-xs mt-6">
@@ -257,7 +259,7 @@ export default function Login() {
 
 function Aviso({ texto }) {
   return (
-    <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-3 py-2.5 flex items-start gap-2">
+    <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-3 py-2.5 flex items-start gap-2 animate-subir">
       <span className="leading-none">⚠️</span>
       <span>{texto}</span>
     </div>

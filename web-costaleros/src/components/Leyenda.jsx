@@ -17,9 +17,9 @@ export default function Leyenda({ marcas, conYo = false }) {
   const presentes = marcasPresentes(marcas)
 
   return (
-    <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 rounded-lg
-                    border border-oro/20 bg-morado-black/40 px-4 py-2.5 text-[11px] font-semibold">
-      <Muestra clase="border-morado-light/30 bg-morado-black/50" texto="Un solo turno" />
+    <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 border-y border-oro/15
+                    px-2 py-2.5 text-[11.5px] font-semibold">
+      <Muestra clase="border-oro/25 bg-morado-black/60" texto="Un solo turno" />
       {presentes.map((m) => (
         <Muestra key={m.id} clase={ESTILO_MARCA[m.id]} texto={m.nombre} titulo={m.descripcion} />
       ))}
@@ -30,8 +30,8 @@ export default function Leyenda({ marcas, conYo = false }) {
 
 function Muestra({ clase, texto, titulo }) {
   return (
-    <span className="flex items-center gap-1.5 text-crema/80" title={titulo}>
-      <span className={`h-3.5 w-5 shrink-0 rounded-sm border ${clase}`} />
+    <span className="flex items-center gap-1.5 text-crema/85" title={titulo}>
+      <span className={`h-3.5 w-5 shrink-0 rounded-[2px] border ${clase}`} />
       {texto}
     </span>
   )

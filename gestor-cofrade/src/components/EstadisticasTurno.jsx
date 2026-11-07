@@ -73,7 +73,7 @@ export default function EstadisticasTurno({ stats, turno }) {
       </button>
 
       {abierto && (
-        <div className="px-5 pb-5 space-y-4 bg-slate-50/50">
+        <div className="animate-subir px-5 pb-5 space-y-4 bg-slate-50/50">
 
           {/* ---- Avisos ---- */}
           {stats.avisos.length > 0 && (

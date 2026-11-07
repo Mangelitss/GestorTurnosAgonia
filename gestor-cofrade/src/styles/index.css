@@ -10,39 +10,52 @@
   * {
     box-sizing: border-box;
   }
+  input[type='checkbox'], input[type='radio'] { accent-color: #4F1243; }
 }
 
 @layer components {
   .btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5
-           font-semibold text-sm transition-all duration-200 cursor-pointer
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5
+           font-semibold text-sm cursor-pointer
            disabled:opacity-50 disabled:cursor-not-allowed select-none;
+    transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease,
+                box-shadow 0.25s ease, opacity 0.2s ease,
+                transform 0.25s cubic-bezier(0.22, 0.75, 0.2, 1);
   }
+  .btn:hover:not(:disabled) { transform: translateY(-1px); }
+  .btn:active:not(:disabled) { transform: scale(0.96); }
+
   .btn-oro {
-    @apply btn bg-oro text-morado-dark hover:bg-oro-dark hover:text-white shadow-sm;
+    @apply btn bg-oro text-morado-dark hover:bg-oro-dark hover:text-white shadow-sm hover:shadow-md;
   }
   .btn-morado {
-    @apply btn bg-morado text-white hover:bg-morado-light shadow-sm;
+    @apply btn bg-morado text-white hover:bg-morado-light shadow-sm hover:shadow-md;
   }
   .btn-azul {
-    @apply btn bg-sky-800 text-white hover:bg-sky-700 shadow-sm;
+    @apply btn bg-sky-800 text-white hover:bg-sky-700 shadow-sm hover:shadow-md;
   }
   .btn-rojo {
-    @apply btn bg-red-600 text-white hover:bg-red-500 shadow-sm;
+    @apply btn bg-red-600 text-white hover:bg-red-500 shadow-sm hover:shadow-md;
   }
   .btn-ghost {
-    @apply btn bg-white text-slate-700 border border-slate-300 hover:bg-slate-50;
+    @apply btn bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 hover:shadow-sm;
   }
 
   .card {
-    @apply bg-white rounded-xl border border-slate-200 shadow-sm;
+    @apply bg-white rounded-2xl border border-slate-200/80 shadow-suave;
   }
+  .card-viva {
+    transition: box-shadow 0.3s ease, border-color 0.3s ease,
+                transform 0.3s cubic-bezier(0.22, 0.75, 0.2, 1);
+  }
+  .card-viva:hover { @apply shadow-elevada; transform: translateY(-3px); }
 
   .input {
-    @apply w-full rounded-lg border border-slate-300 px-3 py-2 text-sm
-           outline-none transition focus:border-morado focus:ring-2 focus:ring-morado/20
-           disabled:bg-slate-100;
+    @apply w-full rounded-xl border border-slate-300 px-3 py-2 text-sm
+           outline-none disabled:bg-slate-100;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
   }
+  .input:focus { @apply border-morado; box-shadow: 0 0 0 3px rgba(79, 18, 67, 0.15); }
 
   .label {
     @apply block text-xs font-bold uppercase tracking-wide text-slate-600 mb-1.5;
@@ -51,6 +64,44 @@
   .chip {
     @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold;
   }
+
+  /* --- Pestañas con marca deslizante --- */
+  .segmentado {
+    @apply relative inline-flex gap-1 bg-slate-200/70 rounded-xl p-1 w-fit;
+  }
+  .segmentado-ancho { display: flex; width: 100%; }
+  .segmentado-ancho .segmentado-pieza { flex: 1 1 0; }
+  .segmentado-pieza {
+    @apply relative z-10 flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold
+           text-slate-600 cursor-pointer select-none whitespace-nowrap hover:text-morado;
+    transition: color 0.25s ease;
+  }
+  .segmentado-pieza[aria-pressed='true'] { @apply text-morado; }
+  .segmentado-marca {
+    @apply absolute left-0 top-1 bottom-1 rounded-lg bg-white shadow;
+    transition: transform 0.42s cubic-bezier(0.22, 0.75, 0.2, 1), width 0.42s cubic-bezier(0.22, 0.75, 0.2, 1);
+  }
+
+  /* --- Entrada escalonada. Solo "backwards": al terminar no retiene
+         el transform, para que el hover de las tarjetas siga funcionando --- */
+  .escalonar > * { animation: subir 0.55s cubic-bezier(0.22, 0.75, 0.2, 1) backwards; }
+  .escalonar > *:nth-child(2) { animation-delay: 60ms; }
+  .escalonar > *:nth-child(3) { animation-delay: 120ms; }
+  .escalonar > *:nth-child(4) { animation-delay: 180ms; }
+  .escalonar > *:nth-child(5) { animation-delay: 240ms; }
+  .escalonar > *:nth-child(n + 6) { animation-delay: 300ms; }
+
+  /* --- Filas de tabla --- */
+  .filas-entrada > tr { transition: background-color 0.2s ease; }
+  .filas-entrada > tr:nth-child(-n + 14) { animation: aparecer 0.45s ease-out backwards; }
+  .filas-entrada > tr:nth-child(2) { animation-delay: 30ms; }
+  .filas-entrada > tr:nth-child(3) { animation-delay: 60ms; }
+  .filas-entrada > tr:nth-child(4) { animation-delay: 90ms; }
+  .filas-entrada > tr:nth-child(5) { animation-delay: 120ms; }
+  .filas-entrada > tr:nth-child(6) { animation-delay: 150ms; }
+  .filas-entrada > tr:nth-child(7) { animation-delay: 180ms; }
+  .filas-entrada > tr:nth-child(8) { animation-delay: 210ms; }
+  .filas-entrada > tr:nth-child(n + 9):nth-child(-n + 14) { animation-delay: 240ms; }
 }
 
 /* Scrollbar discreta */

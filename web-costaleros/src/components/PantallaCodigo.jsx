@@ -70,23 +70,17 @@ export default function PantallaCodigo({ onEntrar }) {
 
   return (
     <form onSubmit={enviar} className="seccion animate-aparecer">
-      <div className="mx-auto max-w-sm space-y-5 py-6 text-center">
-        <img
-          src="/cristo_agonia.jpg"
-          alt=""
-          className="mx-auto h-28 w-28 rounded-full border-2 border-oro/50 object-cover shadow-lg"
-        />
-
+      <div className="mx-auto max-w-sm space-y-5 py-5 text-center">
         <div>
-          <h2 className="titulo text-lg">Acceso del tercio</h2>
-          <p className="mt-1.5 text-sm text-oro-light/55">
+          <h2 className="titulo text-[17px]">Acceso del tercio</h2>
+          <p className="prosa mt-2 text-oro-light/75">
             Escribe el código que te ha dado el cuadrillero.
           </p>
         </div>
 
         <div className="relative">
           <input
-            className="campo pr-16 text-center tracking-wider"
+            className="campo pr-[4.5rem] text-center tracking-wider"
             type={ver ? 'text' : 'password'}
             value={codigo}
             onChange={(e) => setCodigo(e.target.value)}
@@ -99,8 +93,8 @@ export default function PantallaCodigo({ onEntrar }) {
           <button
             type="button"
             onClick={() => setVer(!ver)}
-            className="absolute right-2 top-1/2 -translate-y-1/2 rounded px-2 py-1
-                       text-[11px] font-bold uppercase text-oro-light/50 hover:text-oro-light"
+            className="absolute right-1 top-1/2 -translate-y-1/2 px-3 py-2.5 font-titulo text-[10.5px]
+                       font-semibold uppercase tracking-[0.08em] text-oro-light/60"
           >
             {ver ? 'Ocultar' : 'Ver'}
           </button>
@@ -120,7 +114,7 @@ export default function PantallaCodigo({ onEntrar }) {
               : 'Entrar'}
         </button>
 
-        <p className="text-[11px] text-oro-light/30">
+        <p className="font-texto text-[15px] italic text-oro-light/50">
           Da igual mayúsculas, tildes o espacios.
         </p>
       </div>

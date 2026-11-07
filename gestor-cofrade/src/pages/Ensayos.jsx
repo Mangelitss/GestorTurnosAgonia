@@ -137,7 +137,7 @@ export default function Ensayos() {
                 No hay ningún ensayo abierto ahora mismo.
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+              <div className="escalonar grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                 {abiertos.map((e) => (
                   <TarjetaEnsayo
                     key={e.id} ensayo={e} puedeEditar={puedeEditar}
@@ -155,7 +155,7 @@ export default function Ensayos() {
                 <span className="w-2 h-2 rounded-full bg-slate-400" />
                 Ensayos archivados ({archivados.length})
               </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+              <div className="escalonar grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                 {archivados.map((e) => (
                   <TarjetaEnsayo
                     key={e.id} ensayo={e} puedeEditar={puedeEditar}
@@ -191,7 +191,7 @@ function TarjetaEnsayo({ ensayo, puedeEditar, onArchivar, onReabrir, onBorrar })
   const numAsistentes = ensayo.asistentes?.length || 0
 
   return (
-    <div className={`card p-5 transition hover:shadow-md ${archivado ? 'opacity-75' : ''}`}>
+    <div className={`card card-viva p-5 ${archivado ? 'opacity-75' : ''}`}>
       <div className="flex items-start justify-between gap-2 mb-3">
         <div className="min-w-0">
           <p className="text-xs text-slate-400 uppercase tracking-wide">

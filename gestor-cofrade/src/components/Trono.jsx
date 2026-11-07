@@ -109,7 +109,7 @@ export default function Trono({
             {t > 0 && <SeparadorTurno />}
 
             <div
-              className="card overflow-hidden border-l-[6px] scroll-mt-4"
+              className="card overflow-clip border-l-[6px] scroll-mt-4 animate-subir"
               style={{ borderLeftColor: color.barra }}
             >
 
@@ -346,8 +346,8 @@ function Posicion({
         onDragLeave={onDragLeave}
         onDrop={onDrop}
         onClick={onClickVacio}
-        className={`flex items-center gap-2 px-2 py-1.5 rounded border border-dashed text-xs transition
-                    ${esDestino ? 'border-oro bg-oro/10' : 'border-slate-200 bg-white/50'}
+        className={`flex items-center gap-2 px-2 py-1.5 rounded-md border border-dashed text-xs transition-all duration-200
+                    ${esDestino ? 'border-oro bg-oro/10 scale-[1.03]' : 'border-slate-200 bg-white/50'}
                     ${soloLectura ? '' : 'cursor-pointer hover:border-oro hover:bg-oro/5'}`}
       >
         <span className="text-[10px] text-slate-300 w-4 shrink-0">{numero}</span>
@@ -390,8 +390,9 @@ function Posicion({
       onDragOver={onDragOver}
       onDragLeave={onDragLeave}
       onDrop={onDrop}
-      className={`flex items-center gap-1.5 px-2 py-1.5 rounded border text-xs transition group
-                  ${estiloCalor ? '' : estilo} ${esDestino ? 'ring-2 ring-oro' : ''}
+      className={`flex items-center gap-1.5 px-2 py-1.5 rounded-md border text-xs transition-all duration-200 group
+                  hover:-translate-y-px hover:shadow-md
+                  ${estiloCalor ? '' : estilo} ${esDestino ? 'ring-2 ring-oro scale-[1.03]' : ''}
                   ${!soloLectura && !persona.bloqueado ? 'cursor-move' : ''}`}
       style={estiloCalor || undefined}
       title={

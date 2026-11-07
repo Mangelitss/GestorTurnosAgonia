@@ -26,7 +26,7 @@ import { estadisticasTurno, FLEXION_VARA_CM } from '../lib/estadisticas'
 import Trono from './Trono'
 import SelectorAlgoritmo from './SelectorAlgoritmo'
 import { LeyendaCalor } from './EstadisticasTurno'
-import { Modal, Alerta, Vacio } from './ui'
+import { Modal, Alerta, Vacio, Segmentado } from './ui'
 
 export default function PestanaTurnos({
   procesion,
@@ -246,26 +246,25 @@ export default function PestanaTurnos({
 
       {/* ---- Selector de pieza ---- */}
       {llevaCruz && (
-        <div className="flex gap-1 bg-slate-100 rounded-lg p-1 w-fit">
-          {['trono', 'cruz'].map((p) => {
+        <Segmentado
+          valor={pieza}
+          onCambiar={setPieza}
+          opciones={['trono', 'cruz'].map((p) => {
             const info = PIEZAS[p]
             const cuad = p === 'cruz' ? procesion.cuadrante_cruz : procesion.cuadrante_trono
             const n = cuad ? ocupantes(cuad).length : 0
-            return (
-              <button
-                key={p}
-                onClick={() => setPieza(p)}
-                className={`px-4 py-2 rounded-md text-sm font-semibold transition flex items-center gap-2 ${
-                  pieza === p ? 'bg-white text-morado shadow-sm' : 'text-slate-600 hover:text-morado'
-                }`}
-              >
-                <span className={`w-2 h-2 rounded-full ${info.punto}`} />
-                {info.nombre}
-                <span className="text-xs text-slate-400">({n})</span>
-              </button>
-            )
+            return {
+              id: p,
+              label: (
+                <>
+                  <span className={`w-2 h-2 rounded-full ${info.punto}`} />
+                  {info.nombre}
+                  <span className="text-xs text-slate-400">({n})</span>
+                </>
+              ),
+            }
           })}
-        </div>
+        />
       )}
 
       {/* ---- Barra de control ---- */}

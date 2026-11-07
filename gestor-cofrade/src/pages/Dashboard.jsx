@@ -121,7 +121,7 @@ export default function Dashboard() {
   return (
     <Page>
       {/* --- Bienvenida --- */}
-      <div className="bg-gradient-to-r from-morado-deep to-morado rounded-2xl p-8 mb-8 border-l-4 border-oro overflow-hidden">
+      <div className="animate-subir bg-gradient-to-r from-morado-deep to-morado rounded-2xl p-8 mb-8 border-l-4 border-oro overflow-hidden shadow-suave">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
             <p className="text-oro-light/60 text-sm">{saludo},</p>
@@ -143,7 +143,7 @@ export default function Dashboard() {
       ) : (
         <>
           {/* --- Estadisticas --- */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          <div className="escalonar grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
             <StatCard icono="👥" valor={stats.total} etiqueta="Costaleros en el censo" color="morado" />
             <StatCard icono="M" valor={stats.miercoles} etiqueta="Apuntados Miércoles Santo" color="oro" letra />
             <StatCard icono="V" valor={stats.viernes} etiqueta="Apuntados Viernes Santo" color="azul" letra />
@@ -152,23 +152,23 @@ export default function Dashboard() {
 
           {/* --- Accesos principales --- */}
           <h2 className="font-serif text-lg font-bold text-slate-700 mb-4">¿Qué quieres hacer?</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
+          <div className="escalonar grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
             {ACCESOS.filter((a) => puede(a.permiso)).map((a) => (
               <Link
                 key={a.to}
                 to={a.to}
-                className="card p-6 hover:shadow-lg hover:-translate-y-0.5 transition-all group"
+                className="card card-viva p-6 group"
               >
                 <div
                   className={`w-14 h-14 rounded-xl bg-gradient-to-br ${a.color}
                               flex items-center justify-center text-2xl mb-4
-                              group-hover:scale-105 transition-transform`}
+                              group-hover:scale-110 transition-transform duration-300 ease-posarse`}
                 >
                   {a.icono}
                 </div>
                 <h3 className="font-serif text-lg font-bold text-morado mb-1.5">{a.titulo}</h3>
                 <p className="text-slate-500 text-sm leading-relaxed">{a.texto}</p>
-                <p className="text-oro-dark text-sm font-semibold mt-4 group-hover:translate-x-1 transition-transform">
+                <p className="text-oro-dark text-sm font-semibold mt-4 group-hover:translate-x-1.5 transition-transform duration-300 ease-posarse">
                   Entrar →
                 </p>
               </Link>
@@ -176,7 +176,7 @@ export default function Dashboard() {
           </div>
 
           {/* --- Dos columnas: procesiones + proximo evento --- */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+          <div className="escalonar grid grid-cols-1 lg:grid-cols-3 gap-5">
 
             {/* Procesiones recientes */}
             <div className="card p-6 lg:col-span-2">
@@ -192,7 +192,7 @@ export default function Dashboard() {
                   Todavía no has creado ninguna procesión.
                 </p>
               ) : (
-                <div className="space-y-2">
+                <div className="escalonar space-y-2">
                   {ultimasProcesiones.map((p) => {
                     const tipo = TIPOS_PROCESION[p.tipo] || TIPOS_PROCESION.extraordinaria
                     return (
@@ -200,7 +200,7 @@ export default function Dashboard() {
                         key={p.id}
                         to={`/procesiones/${p.id}`}
                         className="flex items-center gap-3 p-3 rounded-lg border border-slate-200
-                                   hover:border-oro hover:bg-oro/5 transition-all"
+                                   hover:border-oro hover:bg-oro/5 hover:translate-x-1 transition-all duration-300 ease-posarse"
                       >
                         <span className="text-xl">{tipo.icono}</span>
                         <div className="flex-1 min-w-0">

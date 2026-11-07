@@ -217,7 +217,7 @@ export default function Licencias() {
       </div>
 
       {/* --- Resumen de roles --- */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-8">
+      <div className="escalonar grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-8">
         {Object.values(ROLES).map((r) => {
           const cuenta = cuadrilleros.filter((c) => (c.rol || ROL_POR_DEFECTO) === r.id).length
           return (
@@ -259,7 +259,7 @@ export default function Licencias() {
               <h2 className="font-serif text-base font-bold text-slate-700 mb-3">
                 Licencias pendientes de activar ({libres.length})
               </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              <div className="escalonar grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {libres.map((l) => {
                   const r = datosRol(l.rol || ROL_POR_DEFECTO)
                   return (
@@ -314,7 +314,7 @@ export default function Licencias() {
                       <th className="px-4 py-3"></th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="filas-entrada divide-y divide-slate-100">
                     {usadas.map((l) => {
                       const c = cuadrilleros.find((x) => x.id === l.uid)
                       const rolObj = c?.rol || l.rol || ROL_POR_DEFECTO

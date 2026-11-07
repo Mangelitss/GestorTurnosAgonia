@@ -21,7 +21,7 @@ import PestanaTurnos from '../components/PestanaTurnos'
 import PestanaPublicar from '../components/PestanaPublicar'
 import { LeyendaConflictos } from '../components/PanelConflictos'
 import { AvisoBloqueo, EstadoGuardado } from '../components/AvisoBloqueo'
-import { Page, Cargando, Modal, Alerta, Toast } from '../components/ui'
+import { Page, Cargando, Modal, Alerta, Toast, Segmentado } from '../components/ui'
 
 const PESTANAS = [
   { id: 'tramos', label: 'Tramos', icono: '🗺️' },
@@ -186,20 +186,14 @@ export default function ProcesionDetalle() {
       )}
 
       {/* ---------- PESTAÑAS ---------- */}
-      <div className="flex gap-1 bg-slate-100 rounded-lg p-1 mb-5 w-fit">
-        {PESTANAS.map((p) => (
-          <button
-            key={p.id}
-            onClick={() => setPestana(p.id)}
-            className={`px-5 py-2.5 rounded-md text-sm font-semibold transition flex items-center gap-2 ${
-              pestana === p.id ? 'bg-white text-morado shadow-sm' : 'text-slate-600 hover:text-morado'
-            }`}
-          >
-            <span>{p.icono}</span> {p.label}
-          </button>
-        ))}
-      </div>
+      <Segmentado
+        className="mb-5"
+        valor={pestana}
+        onCambiar={setPestana}
+        opciones={PESTANAS.map((p) => ({ id: p.id, label: <><span>{p.icono}</span> {p.label}</> }))}
+      />
 
+      <div key={pestana} className="animate-subir">
       {/* Leyenda visible en la pestaña de turnos */}
       {pestana === 'turnos' && (
         <div className="card p-3 mb-4">
@@ -238,6 +232,8 @@ export default function ProcesionDetalle() {
           avisar={avisar}
         />
       )}
+
+      </div>
 
       <ModalDatos
         abierto={modalDatos}

@@ -166,7 +166,7 @@ export default function Procesiones() {
                 </span>
               </h2>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+              <div className="escalonar grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                 {procs.map((p) => (
                   <TarjetaProcesion
                     key={p.id}
@@ -205,7 +205,7 @@ export default function Procesiones() {
               </button>
 
               {archivoAbierto && (
-                <div className="space-y-6">
+                <div className="space-y-6 animate-subir">
                   <p className="text-xs text-slate-500 bg-slate-50 rounded-lg px-4 py-2.5">
                     ℹ️ Procesiones de años pasados. Puedes consultarlas, duplicarlas
                     para reutilizar su recorrido y tramos, y editarlas si hiciera falta.
@@ -217,7 +217,7 @@ export default function Procesiones() {
                         {anio}
                         <span className="flex-1 h-px bg-slate-100" />
                       </h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                      <div className="escalonar grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                         {procs.map((p) => (
                           <TarjetaProcesion
                             key={p.id}
@@ -273,7 +273,7 @@ function TarjetaProcesion({ procesion: p, puedeEditar, puedeBorrar, archivada, o
   const esLetra = tipo.icono.length === 1 && /[A-Z]/.test(tipo.icono)
 
   return (
-    <div className={`card p-5 hover:shadow-md transition ${archivada ? 'opacity-80 bg-slate-50/50' : ''}`}>
+    <div className={`card card-viva p-5 ${archivada ? 'opacity-80 bg-slate-50/50' : ''}`}>
       <div className="flex items-start justify-between gap-3 mb-3">
         <div className="flex items-center gap-3 min-w-0">
           <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0

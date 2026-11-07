@@ -1,8 +1,12 @@
 // =============================================================
 //  LAYOUT PRINCIPAL — menu lateral + area de contenido
+//
+//  El cambio de pantalla se anima sobre el contenido ya montado
+//  (no se vuelve a crear), asi no se pierde lo que hubiera a medias.
 // =============================================================
 
-import { NavLink, useNavigate } from 'react-router-dom'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth, nombreConComa } from '../context/AuthContext'
 import { P } from '../lib/roles'
 
@@ -19,6 +23,12 @@ const MENU = [
 export default function Layout({ children }) {
   const { perfil, infoRol, esSupremo, puede, cerrarSesion } = useAuth()
   const navigate = useNavigate()
+  const { pathname } = useLocation()
+
+  const principal = useRef(null)
+  const contenido = useRef(null)
+  const menu = useRef(null)
+  const [marca, setMarca] = useState(null)
 
   const salir = async () => {
     if (confirm('¿Quieres cerrar la sesión?')) {
@@ -35,11 +45,34 @@ export default function Layout({ children }) {
 
   const visibles = MENU.filter((m) => !m.permiso || puede(m.permiso))
 
+  // ---- La marca dorada del menu se desliza hasta la seccion activa ----
+  useLayoutEffect(() => {
+    const medir = () => {
+      const el = menu.current?.querySelector('[aria-current="page"]')
+      setMarca(el ? { y: el.offsetTop, h: el.offsetHeight } : null)
+    }
+    medir()
+    window.addEventListener('resize', medir)
+    return () => window.removeEventListener('resize', medir)
+  }, [pathname, visibles.length])
+
+  // ---- Al cambiar de pantalla: arriba del todo y entrada suave ----
+  useEffect(() => {
+    if (principal.current) principal.current.scrollTop = 0
+    contenido.current?.animate?.(
+      [
+        { opacity: 0, transform: 'translateY(14px)' },
+        { opacity: 1, transform: 'none' },
+      ],
+      { duration: 420, easing: 'cubic-bezier(0.22, 0.75, 0.2, 1)' }
+    )
+  }, [pathname])
+
   return (
-    <div className="min-h-screen flex bg-slate-100">
+    <div className="h-screen flex bg-slate-100 overflow-hidden">
 
       {/* ---------- MENU LATERAL ---------- */}
-      <aside className="w-64 bg-morado flex flex-col shrink-0">
+      <aside className="w-64 bg-gradient-to-b from-morado to-morado-dark flex flex-col shrink-0">
         <div className="px-6 py-7 border-b border-morado-light/30">
           <h1 className="font-serif text-xl font-bold text-oro leading-tight">
             GESTOR
@@ -51,22 +84,35 @@ export default function Layout({ children }) {
           </p>
         </div>
 
-        <nav className="flex-1 py-4 px-3 space-y-1 overflow-y-auto">
+        <nav ref={menu} className="relative flex-1 py-4 px-3 space-y-1 overflow-y-auto">
+          {marca && (
+            <span
+              className="absolute left-3 right-3 top-0 rounded-xl bg-oro shadow-md
+                         transition-[transform,height] duration-500 ease-posarse"
+              style={{ height: marca.h, transform: `translateY(${marca.y}px)` }}
+              aria-hidden="true"
+            />
+          )}
           {visibles.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
               end={item.exact}
               className={({ isActive }) =>
-                `flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold transition-all ${
+                `relative flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold group
+                 transition-[color,background-color] duration-300 ${
                   isActive
-                    ? 'bg-oro text-morado-dark shadow-sm'
-                    : 'text-white/80 hover:bg-morado-light hover:text-white'
+                    ? 'text-morado-dark'
+                    : 'text-white/80 hover:bg-white/10 hover:text-white'
                 }`
               }
             >
-              <span className="text-lg leading-none">{item.icono}</span>
-              {item.label}
+              <span className="text-lg leading-none transition-transform duration-300 ease-posarse group-hover:scale-125">
+                {item.icono}
+              </span>
+              <span className="transition-transform duration-300 ease-posarse group-hover:translate-x-0.5">
+                {item.label}
+              </span>
             </NavLink>
           ))}
         </nav>
@@ -92,8 +138,8 @@ export default function Layout({ children }) {
           </div>
           <button
             onClick={salir}
-            className="w-full text-left px-4 py-2.5 rounded-lg text-sm font-semibold
-                       text-red-200 hover:bg-red-600 hover:text-white transition-all"
+            className="w-full text-left px-4 py-2.5 rounded-xl text-sm font-semibold
+                       text-red-200 hover:bg-red-600 hover:text-white transition-colors duration-300"
           >
             ❌ Cerrar sesión
           </button>
@@ -101,8 +147,8 @@ export default function Layout({ children }) {
       </aside>
 
       {/* ---------- CONTENIDO ---------- */}
-      <main className="flex-1 overflow-y-auto h-screen">
-        {children}
+      <main ref={principal} className="flex-1 min-w-0 overflow-y-auto">
+        <div ref={contenido}>{children}</div>
       </main>
     </div>
   )

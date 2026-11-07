@@ -17,7 +17,7 @@ import {
 import { pdfCalendarioMes, pdfCalendarioListado } from '../lib/pdf'
 import { P } from '../lib/roles'
 import { useAuth } from '../context/AuthContext'
-import { Page, PageHeader, Cargando, Modal, Alerta, Toast } from '../components/ui'
+import { Page, PageHeader, Cargando, Modal, Alerta, Toast, Segmentado } from '../components/ui'
 
 export default function Calendario() {
   const { puede } = useAuth()
@@ -244,7 +244,7 @@ export default function Calendario() {
           </div>
 
           {/* Celdas */}
-          <div className="grid grid-cols-7">
+          <div key={`${anio}-${mes}`} className="grid grid-cols-7 animate-aparecer">
             {celdas.map((c, i) => {
               const evs = porFecha[c.iso] || []
               return (
@@ -626,22 +626,15 @@ function GestorOpciones({ abierto, opciones, onCerrar, onCambio, avisar }) {
 
   return (
     <Modal abierto={abierto} onCerrar={onCerrar} titulo="Motivos y lugares">
-      <div className="flex gap-1 bg-slate-100 rounded-lg p-1 mb-5">
-        {[
+      <Segmentado
+        className="segmentado-ancho mb-5"
+        valor={pestana}
+        onCambiar={(id) => { setPestana(id); setError(''); setValor('') }}
+        opciones={[
           { id: 'tipos', label: 'Motivos' },
           { id: 'lugares', label: 'Lugares' },
-        ].map((p) => (
-          <button
-            key={p.id}
-            onClick={() => { setPestana(p.id); setError(''); setValor('') }}
-            className={`flex-1 px-3 py-2 rounded-md text-sm font-semibold transition ${
-              pestana === p.id ? 'bg-white text-morado shadow-sm' : 'text-slate-600 hover:text-morado'
-            }`}
-          >
-            {p.label}
-          </button>
-        ))}
-      </div>
+        ]}
+      />
 
       <form onSubmit={anadir} className="flex gap-2 mb-5">
         <input
