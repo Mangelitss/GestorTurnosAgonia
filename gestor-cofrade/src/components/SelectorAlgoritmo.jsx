@@ -26,7 +26,7 @@ export default function SelectorAlgoritmo({ valor, onCambiar }) {
               <div className="flex items-center gap-2.5 mb-1.5">
                 <span
                   className={`w-8 h-8 rounded-lg flex items-center justify-center
-                              font-display text-lg font-semibold shrink-0 ${
+                              font-serif text-lg font-bold shrink-0 ${
                     activo ? 'bg-oro text-morado-dark' : 'bg-slate-100 text-slate-500'
                   }`}
                 >

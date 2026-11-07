@@ -31,7 +31,6 @@ import { P } from '../lib/roles'
 import { useAuth, nombreConComa } from '../context/AuthContext'
 import { Page, PageHeader, Cargando, Modal, Alerta, Toast } from '../components/ui'
 
-import { Icono } from '../components/Iconos'
 export default function Publicacion() {
   const { puede, perfil } = useAuth()
   const puedePublicar = puede(P.PROC_PUBLICAR)
@@ -120,10 +119,11 @@ export default function Publicacion() {
     <Page>
       <PageHeader
         titulo="Web de costaleros"
+        icono="🌐"
         subtitulo="Lo que ven los costaleros con el código de acceso. Sin cuenta ni contraseña."
       >
         <a href={cfg?.url_web} target="_blank" rel="noopener noreferrer" className="btn-oro">
-          <Icono e="↗" /> Abrir la web
+          ↗ Abrir la web
         </a>
       </PageHeader>
 
@@ -286,7 +286,7 @@ function TarjetaEstado({ cfg, publicadas, hayPendientes, puedePublicar, ocupado,
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
           <p className="label">Estado de la web</p>
-          <p className={`font-display text-xl font-semibold flex items-center gap-2 ${visible ? 'text-emerald-700' : 'text-slate-500'}`}>
+          <p className={`font-serif text-xl font-bold flex items-center gap-2 ${visible ? 'text-emerald-700' : 'text-slate-500'}`}>
             <span className={`w-3 h-3 rounded-full ${visible ? 'bg-emerald-500' : 'bg-slate-400'}`} />
             {visible ? 'Visible' : 'Oculta'}
           </p>
@@ -306,11 +306,11 @@ function TarjetaEstado({ cfg, publicadas, hayPendientes, puedePublicar, ocupado,
         {puedePublicar && (
           visible ? (
             <button onClick={onOcultar} disabled={ocupado} className="btn-ghost">
-              <Icono e="🙈" /> Ocultar web
+              🙈 Ocultar web
             </button>
           ) : (
             <button onClick={onMostrar} disabled={ocupado || !cfg?.clave} className="btn-oro">
-              <Icono e="👁️" /> Mostrar web
+              👁️ Mostrar web
             </button>
           )
         )}
@@ -330,7 +330,7 @@ function TarjetaEstado({ cfg, publicadas, hayPendientes, puedePublicar, ocupado,
           </p>
           {puedePublicar && (
             <button onClick={onSubir} disabled={ocupado} className="btn-morado text-xs py-2">
-              <Icono e="⬆️" /> Subir cambios
+              ⬆️ Subir cambios
             </button>
           )}
         </div>
@@ -446,7 +446,7 @@ function TarjetaCodigo({ cfg, puedePublicar, onCambiar, avisar }) {
 
       {puedePublicar && (
         <button onClick={onCambiar} className="btn-morado mt-4 text-sm">
-          <Icono e="🔑" /> {codigo ? 'Cambiar código' : 'Poner código'}
+          🔑 {codigo ? 'Cambiar código' : 'Poner código'}
         </button>
       )}
     </div>
@@ -460,7 +460,7 @@ function Seccion({ titulo, ayuda, children }) {
   return (
     <div className="card overflow-hidden mb-6">
       <div className="bg-slate-50 border-b border-slate-200 px-5 py-3">
-        <h3 className="font-display text-base font-semibold text-morado">{titulo}</h3>
+        <h3 className="font-serif text-base font-bold text-morado">{titulo}</h3>
         {ayuda && <p className="text-xs text-slate-500 mt-0.5">{ayuda}</p>}
       </div>
       <div className="divide-y divide-slate-100">{children}</div>
@@ -499,14 +499,14 @@ function FilaPublicable({
         {subtitulo && <p className="text-xs text-slate-500 mt-0.5">{subtitulo}</p>}
         {problemas.length > 0 && (
           <p className={`text-xs mt-1 ${publicada ? 'text-amber-700' : 'text-red-600'}`}>
-            <Icono e={publicada ? '⚠️' : '⛔'} tam={13} className="mr-1" />{problemas.join(' · ')}
+            {publicada ? '⚠️' : '⛔'} {problemas.join(' · ')}
           </p>
         )}
       </div>
 
       <div className="flex items-center gap-2 shrink-0">
         <button onClick={onInfo} className="btn-ghost text-xs py-2">
-          <Icono e="ℹ️" /> Información
+          ℹ️ Información
         </button>
         {puedePublicar && (
           publicada ? (
@@ -679,7 +679,7 @@ function ModalInfo({ datos, soloLectura, onCerrar, onGuardar }) {
             <ul className="space-y-1.5 mb-2">
               {f.avisos.map((a, i) => (
                 <li key={i} className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm">
-                  <span className="shrink-0"><Icono e="📢" /></span>
+                  <span className="shrink-0">📢</span>
                   <span className="flex-1 text-amber-900">{a}</span>
                   {!soloLectura && (
                     <button

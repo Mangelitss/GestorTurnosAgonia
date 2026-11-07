@@ -36,7 +36,6 @@ import { LeyendaCalor } from '../components/EstadisticasTurno'
 import { AvisoBloqueo, EstadoGuardado } from '../components/AvisoBloqueo'
 import { Page, Cargando, Vacio, Modal, Alerta, Toast } from '../components/ui'
 
-import { Icono } from '../components/Iconos'
 export default function EnsayoDetalle() {
   const { id } = useParams()
   const navigate = useNavigate()
@@ -335,7 +334,7 @@ export default function EnsayoDetalle() {
     }
 
     const texto = bloqueados
-      ? `¿Vaciar el Turno ${cuadrante[t].id}?\n\nSe quitarán ${quitables} costalero(s).\n${bloqueados} bloqueado(s) se mantendrán.`
+      ? `¿Vaciar el Turno ${cuadrante[t].id}?\n\nSe quitarán ${quitables} costalero(s).\n🔒 ${bloqueados} bloqueado(s) se mantendrán.`
       : `¿Vaciar el Turno ${cuadrante[t].id}?\n\nSe quitarán ${quitables} costalero(s).`
 
     if (!confirm(texto)) return
@@ -408,19 +407,19 @@ export default function EnsayoDetalle() {
       {/* ---------- CABECERA ---------- */}
       <div className="flex items-start justify-between gap-4 mb-6 flex-wrap">
         <div>
-          <Link to="/ensayos" className="text-[15px] text-morado hover:opacity-70 transition-opacity mb-1.5 inline-block">
-            ‹ Ensayos
+          <Link to="/ensayos" className="text-sm text-slate-500 hover:text-morado mb-1 inline-block">
+            ← Volver a ensayos
           </Link>
-          <h1 className="font-display text-[32px] leading-[1.12] font-bold tracking-[-0.022em] text-slate-800 flex items-center gap-3 flex-wrap">
-            Ensayo del {fechaBonita(ensayo.fecha_iso)}
+          <h1 className="font-serif text-2xl font-bold text-morado flex items-center gap-3">
+            📋 Ensayo del {fechaBonita(ensayo.fecha_iso)}
             <span className={`chip ${est.chip}`}>{est.nombre}</span>
           </h1>
-          <p className="text-slate-500 text-[15px] mt-1.5">
+          <p className="text-slate-500 text-sm mt-1">
             {diaSemana(ensayo.fecha_iso)} · {ensayo.hora} · {ensayo.lugar}
             {!soloLectura && (
               <button
                 onClick={() => setModalDatos(true)}
-                className="ml-2 text-morado hover:opacity-70 transition-opacity text-[13px] font-medium"
+                className="ml-2 text-oro-dark hover:underline text-xs"
               >
                 editar datos
               </button>
@@ -431,7 +430,7 @@ export default function EnsayoDetalle() {
               to="/calendario"
               className="text-xs text-slate-400 hover:text-morado mt-1 inline-flex items-center gap-1"
             >
-              <Icono e="🔗" /> Unido a una convocatoria del calendario
+              🔗 Unido a una convocatoria del calendario
             </Link>
           )}
         </div>
@@ -444,14 +443,14 @@ export default function EnsayoDetalle() {
             onGuardar={() => guardar(null, 'Cambios guardados.')}
           />
           <button onClick={() => pdfAsistentes(ensayo, asistentes)} className="btn-ghost text-xs">
-            <Icono e="📋" /> PDF asistentes
+            📋 PDF asistentes
           </button>
           <button onClick={() => pdfCuadrante(ensayo, cuadrante)} className="btn-ghost text-xs">
-            <Icono e="📄" /> PDF cuadrante
+            📄 PDF cuadrante
           </button>
           {puede(P.ENSAYOS_EDITAR) && (
             <button onClick={cambiarEstado} className="btn-ghost text-xs">
-              {archivado ? 'Reabrir' : 'Archivar'}
+              {archivado ? '🔓 Reabrir' : '📦 Archivar'}
             </button>
           )}
         </div>
@@ -514,8 +513,8 @@ export default function EnsayoDetalle() {
       <div className="grid grid-cols-1 xl:grid-cols-[320px_1fr] gap-6 items-start">
 
         {/* ---- Columna de asistencia ---- */}
-        <div className="card p-5 xl:sticky xl:top-16">
-          <h2 className="font-display text-base font-semibold text-morado mb-1">
+        <div className="card p-5 xl:sticky xl:top-6">
+          <h2 className="font-serif text-base font-bold text-morado mb-1">
             Lista de asistencia
           </h2>
           <p className="text-xs text-slate-500 mb-4">
@@ -578,7 +577,7 @@ export default function EnsayoDetalle() {
                 disabled={asistentes.length === 0}
                 className="btn-morado w-full"
               >
-                {cuadrante ? 'Regenerar turnos' : 'Generar turnos'}
+                {cuadrante ? '🔄 Regenerar turnos' : '⚙️ Generar turnos'}
               </button>
               {asistentes.length > 0 && (
                 <p className="text-xs text-slate-400 mt-2 text-center">
@@ -589,7 +588,7 @@ export default function EnsayoDetalle() {
               )}
               {cuadrante && (
                 <p className="text-[11px] text-slate-400 mt-2 text-center leading-relaxed">
-                  Las posiciones bloqueadas se mantienen al regenerar.
+                  Las posiciones 🔒 bloqueadas se mantienen al regenerar.
                 </p>
               )}
             </div>
@@ -611,7 +610,7 @@ export default function EnsayoDetalle() {
               >
                 {!soloLectura && asistentes.length > 0 && (
                   <button onClick={() => setModalGenerar(true)} className="btn-oro">
-                    <Icono e="⚙️" /> Generar turnos
+                    ⚙️ Generar turnos
                   </button>
                 )}
               </Vacio>
@@ -629,17 +628,17 @@ export default function EnsayoDetalle() {
                   </span>
                   {stats.bloqueadas > 0 && (
                     <span className="chip bg-morado/10 text-morado">
-                      <Icono e="🔒" /> {stats.bloqueadas}
+                      🔒 {stats.bloqueadas}
                     </span>
                   )}
                   {duplicados.length > 0 && (
                     <span className="chip bg-red-100 text-red-700 animate-pulse-fast">
-                      <Icono e="⚠️" /> {duplicados.length} duplicado(s)
+                      ⚠️ {duplicados.length} duplicado(s)
                     </span>
                   )}
                   {statsHombro?.mal > 0 && (
                     <span className="chip bg-red-100 text-red-700 animate-pulse-fast">
-                      <Icono e="⚠️" /> {statsHombro.mal} hombro(s) mal
+                      ⚠️ {statsHombro.mal} hombro(s) mal
                     </span>
                   )}
                 </div>
@@ -650,13 +649,13 @@ export default function EnsayoDetalle() {
                     className={mapaCalor ? 'btn-oro text-xs' : 'btn-ghost text-xs'}
                     title="Colorea a cada costalero según los kilos que soporta"
                   >
-                    {mapaCalor ? 'Mapa de peso: ON' : 'Mapa de peso'}
+                    {mapaCalor ? '🔥 Mapa de peso: ON' : '🧊 Mapa de peso'}
                   </button>
 
                   {!soloLectura && (
                   <>
                     <button onClick={opRevisarHombros} className="btn-ghost text-xs">
-                      <Icono e="💪" /> Comprobar hombros
+                      💪 Comprobar hombros
                     </button>
                     <button onClick={opAnadirTurno} className="btn-ghost text-xs">
                       + Turno
@@ -802,7 +801,7 @@ function BuscadorCostaleros({ censo, yaApuntados, onElegir, onNoExiste }) {
                 onClick={() => { onNoExiste(texto.trim()); setTexto(''); setAbierto(false) }}
                 className="btn-oro text-xs w-full"
               >
-                <Icono e="➕" /> Crear «{texto.trim()}» en el censo
+                ➕ Crear «{texto.trim()}» en el censo
               </button>
             </div>
           ) : (
@@ -1000,7 +999,7 @@ function ModalTardon({ persona, hayHuecos, onResolver }) {
                      disabled:cursor-not-allowed disabled:hover:border-slate-200 disabled:hover:bg-transparent"
         >
           <p className="font-semibold text-sm text-slate-800">
-            <Icono e="📍" /> Colocarlo en el primer hueco libre
+            📍 Colocarlo en el primer hueco libre
           </p>
           <p className="text-xs text-slate-500 mt-0.5">
             {hayHuecos
@@ -1015,7 +1014,7 @@ function ModalTardon({ persona, hayHuecos, onResolver }) {
                      hover:border-oro hover:bg-oro/5 transition"
         >
           <p className="font-semibold text-sm text-slate-800">
-            <Icono e="🔄" /> Regenerar el cuadrante entero
+            🔄 Regenerar el cuadrante entero
           </p>
           <p className="text-xs text-slate-500 mt-0.5">
             Recalcula todo por altura con la lista completa. Las posiciones bloqueadas se respetan.
@@ -1028,7 +1027,7 @@ function ModalTardon({ persona, hayHuecos, onResolver }) {
                      hover:border-slate-300 transition"
         >
           <p className="font-semibold text-sm text-slate-800">
-            <Icono e="⏸️" /> Dejarlo pendiente de colocar
+            ⏸️ Dejarlo pendiente de colocar
           </p>
           <p className="text-xs text-slate-500 mt-0.5">
             Se queda en la lista de asistencia y lo colocas tú a mano cuando quieras.
@@ -1179,9 +1178,9 @@ function ModalAltaRapida({ nombre, onCerrar, onCrear }) {
         <div className="bg-slate-50 rounded-lg p-4 space-y-2.5">
           <p className="label mb-1">Participación</p>
           {[
-            ['miercoles_santo', 'Sale en Miércoles Santo'],
-            ['viernes_santo', 'Sale en Viernes Santo'],
-            ['puede_repetir', 'Puede repetir turno'],
+            ['miercoles_santo', '🕯️  Sale en Miércoles Santo'],
+            ['viernes_santo', '✝️  Sale en Viernes Santo'],
+            ['puede_repetir', '🔁  Puede repetir turno'],
           ].map(([k, label]) => (
             <label key={k} className="flex items-center gap-2.5 cursor-pointer">
               <input

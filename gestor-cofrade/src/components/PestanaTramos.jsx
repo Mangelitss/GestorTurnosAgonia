@@ -10,7 +10,6 @@ import {
 } from '../lib/procesiones'
 import { Modal, Alerta, Vacio } from './ui'
 
-import { Icono } from './Iconos'
 export default function PestanaTramos({
   procesion,
   soloLectura,
@@ -75,12 +74,12 @@ export default function PestanaTramos({
       <div className="card p-5">
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
-            <h3 className="font-display text-base font-semibold text-morado mb-1">
+            <h3 className="font-serif text-base font-bold text-morado mb-1">
               Recorrido de la procesión
             </h3>
             {procesion.recorrido ? (
               <p className="text-sm text-slate-600">
-                <Icono e="📍" /> <b>{procesion.recorrido.nombre_archivo}</b>
+                📍 <b>{procesion.recorrido.nombre_archivo}</b>
                 {procesion.recorrido.puntos?.length > 0 &&
                   ` · ${procesion.recorrido.puntos.length} puntos`}
               </p>
@@ -94,7 +93,7 @@ export default function PestanaTramos({
           {!soloLectura && (
             <div className="flex gap-2">
               <button onClick={() => setModalRuta(true)} className="btn-ghost text-xs">
-                {procesion.recorrido ? 'Cambiar' : 'Subir GPX/KML'}
+                {procesion.recorrido ? '🔄 Cambiar' : '📍 Subir GPX/KML'}
               </button>
               {procesion.recorrido && (
                 <button
@@ -103,7 +102,7 @@ export default function PestanaTramos({
                   }}
                   className="btn-ghost text-xs text-red-500 px-2"
                 >
-                  <Icono e="🗑️" />
+                  🗑️
                 </button>
               )}
             </div>
@@ -180,7 +179,7 @@ function BloqueFase({
   return (
     <div className="card overflow-hidden">
       <div className="bg-slate-50 border-b border-slate-200 px-5 py-3 flex items-center justify-between">
-        <h3 className="font-display text-base font-semibold text-morado flex items-center gap-2">
+        <h3 className="font-serif text-base font-bold text-morado flex items-center gap-2">
           <span className="text-oro-dark">{icono}</span> {titulo}
           <span className="text-xs font-normal text-slate-400">
             ({tramos.length} tramo{tramos.length === 1 ? '' : 's'})
@@ -188,14 +187,14 @@ function BloqueFase({
         </h3>
         {!soloLectura && (
           <button onClick={onAnadir} className="btn-ghost text-xs">
-            <Icono e="➕" /> Añadir tramo
+            ➕ Añadir tramo
           </button>
         )}
       </div>
 
       {nota && tramos.length > 0 && (
         <p className="px-5 py-2 text-xs text-slate-500 bg-sky-50/50 border-b border-slate-100">
-          <Icono e="ℹ️" /> {nota}
+          ℹ️ {nota}
         </p>
       )}
 
@@ -288,7 +287,7 @@ function BloqueFase({
                                  hover:bg-slate-100 transition"
                       title="Editar"
                     >
-                      <Icono e="✏️" />
+                      ✏️
                     </button>
                   </div>
                 )}
@@ -421,7 +420,7 @@ function FichaTramo({ tramo, letrasTrono, letrasCruz, llevaCruz, onCerrar, onGua
 
         <div className="flex gap-2 pt-2">
           <button type="button" onClick={() => onBorrar(f.id)} className="btn-rojo">
-            <Icono e="🗑️" /> Borrar
+            🗑️ Borrar
           </button>
           <div className="flex-1" />
           <button type="button" onClick={onCerrar} className="btn-ghost">Cancelar</button>

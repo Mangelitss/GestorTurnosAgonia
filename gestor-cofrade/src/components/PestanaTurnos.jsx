@@ -28,7 +28,6 @@ import SelectorAlgoritmo from './SelectorAlgoritmo'
 import { LeyendaCalor } from './EstadisticasTurno'
 import { Modal, Alerta, Vacio, Segmentado } from './ui'
 
-import { Icono } from './Iconos'
 export default function PestanaTurnos({
   procesion,
   censo,
@@ -180,7 +179,7 @@ export default function PestanaTurnos({
     }
 
     const texto = bloqueados
-      ? `¿Vaciar el Turno ${cuadrante[t].id}?\n\nSe quitarán ${quitables} costalero(s).\n${bloqueados} bloqueado(s) se mantendrán.`
+      ? `¿Vaciar el Turno ${cuadrante[t].id}?\n\nSe quitarán ${quitables} costalero(s).\n🔒 ${bloqueados} bloqueado(s) se mantendrán.`
       : `¿Vaciar el Turno ${cuadrante[t].id}?\n\nSe quitarán ${quitables} costalero(s).`
 
     if (!confirm(texto)) return
@@ -285,11 +284,11 @@ export default function PestanaTurnos({
                 </span>
               )}
               {stats.bloqueadas > 0 && (
-                <span className="chip bg-morado/10 text-morado"><Icono e="🔒" /> {stats.bloqueadas}</span>
+                <span className="chip bg-morado/10 text-morado">🔒 {stats.bloqueadas}</span>
               )}
               {statsHombro?.mal > 0 && (
                 <span className="chip bg-red-100 text-red-700 animate-pulse-fast">
-                  <Icono e="⚠️" /> {statsHombro.mal} hombro(s) mal
+                  ⚠️ {statsHombro.mal} hombro(s) mal
                 </span>
               )}
             </>
@@ -303,7 +302,7 @@ export default function PestanaTurnos({
               className={mapaCalor ? 'btn-oro text-xs' : 'btn-ghost text-xs'}
               title="Colorea a cada costalero según los kilos que soporta"
             >
-              {mapaCalor ? 'Mapa de peso: ON' : 'Mapa de peso'}
+              {mapaCalor ? '🔥 Mapa de peso: ON' : '🧊 Mapa de peso'}
             </button>
           )}
 
@@ -315,12 +314,12 @@ export default function PestanaTurnos({
                 className="btn-ghost text-xs"
                 title="Comprueba que cada costalero lleve el hombro que le corresponde"
               >
-                <Icono e="💪" /> Comprobar hombros
+                💪 Comprobar hombros
               </button>
             )}
             {cuadrante && pieza === 'trono' && stats.libres > 0 && (
               <button onClick={meterRepetidores} className="btn-ghost text-xs">
-                <Icono e="🔁" /> Rellenar con repetidores
+                🔁 Rellenar con repetidores
               </button>
             )}
             {cuadrante && pieza === 'cruz' && stats.libres > 0 && (
@@ -356,7 +355,7 @@ export default function PestanaTurnos({
               onClick={() => setModalGenerar(pieza)}
               className="btn-morado text-xs"
             >
-              {cuadrante ? 'Regenerar' : 'Generar turnos'}
+              {cuadrante ? '🔄 Regenerar' : '⚙️ Generar turnos'}
             </button>
             </>
           )}
@@ -405,7 +404,7 @@ export default function PestanaTurnos({
           >
             {!soloLectura && candidatos.length > 0 && (
               <button onClick={() => setModalGenerar(pieza)} className="btn-oro">
-                <Icono e="⚙️" /> Generar turnos
+                ⚙️ Generar turnos
               </button>
             )}
           </Vacio>

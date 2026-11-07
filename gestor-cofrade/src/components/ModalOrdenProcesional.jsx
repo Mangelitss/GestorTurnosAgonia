@@ -11,7 +11,6 @@ import {
 import { PIEZAS, FASES } from '../lib/constantes'
 import { Modal, Alerta } from './ui'
 
-import { Icono } from './Iconos'
 export default function ModalOrdenProcesional({
   persona,          // { costalero_id, nombre, altura }
   procesion,
@@ -68,7 +67,7 @@ export default function ModalOrdenProcesional({
     >
       {/* ---- Cabecera ---- */}
       <div className="mb-5">
-        <h3 className="font-display text-xl font-semibold text-morado">{persona.nombre}</h3>
+        <h3 className="font-serif text-xl font-bold text-morado">{persona.nombre}</h3>
         <p className="text-sm text-slate-500 mt-0.5">
           {persona.altura} cm de hombro · {procesion.nombre}
         </p>
@@ -237,7 +236,7 @@ function FilaTramo({ dato, soloLectura, onCambiarRol }) {
 
       {duplicado && (
         <p className="text-[11px] text-red-700 font-semibold mt-1 ml-5.5 pl-0.5">
-          <Icono e="⚠️" /> No puede llevar el trono y la cruz en el mismo tramo.
+          ⚠️ No puede llevar el trono y la cruz en el mismo tramo.
         </p>
       )}
     </div>

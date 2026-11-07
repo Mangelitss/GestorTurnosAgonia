@@ -71,7 +71,7 @@ export const TIPOS_PROCESION = {
     id: 'extraordinaria',
     nombre: 'Procesión Extraordinaria',
     corto: 'Extraordinaria',
-    icono: 'E',
+    icono: '⚙️',
     campoCenso: null,   // entra todo el censo
     campoCruz: null,
   },

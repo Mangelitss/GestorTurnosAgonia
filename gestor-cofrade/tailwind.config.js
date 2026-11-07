@@ -1,17 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 
-const SISTEMA = [
-  '-apple-system', 'BlinkMacSystemFont', 'SF Pro Text', 'Inter',
-  'Segoe UI Variable Text', 'Segoe UI', 'system-ui', 'sans-serif',
-]
-const TITULARES = [
-  '-apple-system', 'BlinkMacSystemFont', 'SF Pro Display', 'Inter',
-  'Segoe UI Variable Display', 'Segoe UI', 'system-ui', 'sans-serif',
-]
-
-// Curva de movimiento del panel, al estilo de las apps de Apple:
-// arranca rapido y se posa despacio, sin rebotes llamativos.
-const POSARSE = 'cubic-bezier(0.32, 0.72, 0, 1)'
+const POSARSE = 'cubic-bezier(0.22, 0.75, 0.2, 1)'
 
 export default {
   content: ['./index.html', './src/**/*.{js,jsx}'],
@@ -31,69 +20,49 @@ export default {
           light: '#e8d08c',
           dark: '#97820B',
         },
-        // Grises neutros de sistema. Sustituyen a los slate azulados
-        // de Tailwind en toda la aplicacion.
-        slate: {
-          50: '#f5f5f7',
-          100: '#eeeef0',
-          200: '#e3e3e6',
-          300: '#d1d1d6',
-          400: '#8e8e93',
-          500: '#6e6e73',
-          600: '#515154',
-          700: '#3a3a3c',
-          800: '#1d1d1f',
-          900: '#111113',
-        },
       },
       fontFamily: {
-        display: TITULARES,
-        sans: SISTEMA,
-      },
-      borderRadius: {
-        lg: '10px',
-        xl: '14px',
-        '2xl': '18px',
-        '3xl': '24px',
+        serif: ['Georgia', 'Cambria', 'serif'],
+        sans: ['Segoe UI', 'system-ui', 'sans-serif'],
       },
       boxShadow: {
-        tarjeta: '0 0 0 0.5px rgba(0,0,0,0.07), 0 1px 3px rgba(0,0,0,0.04)',
-        elevada: '0 0 0 0.5px rgba(0,0,0,0.07), 0 8px 24px rgba(42,10,35,0.10)',
-        hoja: '0 0 0 0.5px rgba(0,0,0,0.10), 0 24px 70px rgba(26,5,20,0.32)',
+        suave: '0 1px 2px rgba(42,10,35,0.04), 0 2px 8px rgba(42,10,35,0.05)',
+        elevada: '0 4px 10px rgba(42,10,35,0.06), 0 12px 28px rgba(42,10,35,0.12)',
       },
       transitionTimingFunction: { posarse: POSARSE },
       animation: {
         'pulse-fast': 'pulse 0.8s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-        subir: `subir 0.42s ${POSARSE} both`,
-        aparecer: 'aparecer 0.24s ease-out both',
-        desaparecer: 'desaparecer 0.2s ease-in both',
-        'hoja-entra': `hojaEntra 0.42s ${POSARSE} both`,
-        'hoja-sale': 'hojaSale 0.2s ease-in both',
-        'aviso-entra': `avisoEntra 0.46s ${POSARSE} both`,
-        'aviso-sale': 'avisoSale 0.2s ease-in both',
+        // "backwards": al terminar no queda ningun transform puesto
+        subir: `subir 0.45s ${POSARSE} backwards`,
+        aparecer: 'aparecer 0.3s ease-out backwards',
+        desaparecer: 'desaparecer 0.22s ease-in both',
+        'hoja-entra': `hojaEntra 0.42s ${POSARSE} backwards`,
+        'hoja-sale': 'hojaSale 0.22s ease-in both',
+        'aviso-entra': `avisoEntra 0.45s ${POSARSE} both`,
+        'aviso-sale': 'avisoSale 0.22s ease-in both',
       },
       keyframes: {
         subir: {
-          '0%': { opacity: '0', transform: 'translateY(10px)' },
-          '100%': { opacity: '1', transform: 'none' },
+          '0%': { opacity: '0', transform: 'translateY(14px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
         },
         aparecer: { '0%': { opacity: '0' }, '100%': { opacity: '1' } },
         desaparecer: { '0%': { opacity: '1' }, '100%': { opacity: '0' } },
         hojaEntra: {
-          '0%': { opacity: '0', transform: 'translateY(16px) scale(0.97)' },
-          '100%': { opacity: '1', transform: 'none' },
+          '0%': { opacity: '0', transform: 'translateY(22px) scale(0.96)' },
+          '100%': { opacity: '1', transform: 'translateY(0) scale(1)' },
         },
         hojaSale: {
-          '0%': { opacity: '1', transform: 'none' },
-          '100%': { opacity: '0', transform: 'translateY(8px) scale(0.98)' },
+          '0%': { opacity: '1', transform: 'translateY(0) scale(1)' },
+          '100%': { opacity: '0', transform: 'translateY(10px) scale(0.97)' },
         },
         avisoEntra: {
-          '0%': { opacity: '0', transform: 'translate(-50%, 16px) scale(0.96)' },
-          '100%': { opacity: '1', transform: 'translate(-50%, 0)' },
+          '0%': { opacity: '0', transform: 'translate(-50%, 20px) scale(0.95)' },
+          '100%': { opacity: '1', transform: 'translate(-50%, 0) scale(1)' },
         },
         avisoSale: {
-          '0%': { opacity: '1', transform: 'translate(-50%, 0)' },
-          '100%': { opacity: '0', transform: 'translate(-50%, 8px) scale(0.98)' },
+          '0%': { opacity: '1', transform: 'translate(-50%, 0) scale(1)' },
+          '100%': { opacity: '0', transform: 'translate(-50%, 10px) scale(0.97)' },
         },
       },
     },

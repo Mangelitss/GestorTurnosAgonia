@@ -14,7 +14,6 @@ import {
 } from '../lib/roles'
 import { Page, PageHeader, Cargando, Vacio, Alerta, Toast, Modal } from '../components/ui'
 
-import { Icono } from '../components/Iconos'
 // Genera un codigo del tipo AGON-2026-K3P9
 function generarCodigo() {
   const abc = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789' // sin caracteres confusos
@@ -183,11 +182,12 @@ export default function Licencias() {
     <Page>
       <PageHeader
         titulo="Cuadrilleros y Licencias"
+        icono="🔑"
         subtitulo={`${usadas.length} registrado(s) · ${libres.length} licencia(s) sin usar · ${quedan} plaza(s) libre(s)`}
       >
         {esSupremo && (
           <button onClick={() => setModalLimite(true)} className="btn-ghost text-xs">
-            <Icono e="⚙️" /> Límite: {limite}
+            ⚙️ Límite: {limite}
           </button>
         )}
         {puede(P.LIC_CREAR) && (
@@ -197,7 +197,7 @@ export default function Licencias() {
             className="btn-oro"
             title={sinPlazas ? 'No quedan plazas disponibles' : ''}
           >
-            <Icono e="➕" /> Generar licencia
+            ➕ Generar licencia
           </button>
         )}
       </PageHeader>
@@ -217,14 +217,14 @@ export default function Licencias() {
       </div>
 
       {/* --- Resumen de roles --- */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-8">
+      <div className="escalonar grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-8">
         {Object.values(ROLES).map((r) => {
           const cuenta = cuadrilleros.filter((c) => (c.rol || ROL_POR_DEFECTO) === r.id).length
           return (
             <div key={r.id} className="card p-4">
               <div className="flex items-center justify-between mb-2">
                 <span className={`chip ${r.chip}`}>
-                  {r.id === 'superadmin' && <Icono e="👑" tam={12} className="mr-1" />}{r.nombre}
+                  {r.id === 'superadmin' && '👑 '}{r.nombre}
                 </span>
                 <span className="font-bold text-lg text-slate-700">{cuenta}</span>
               </div>
@@ -245,7 +245,7 @@ export default function Licencias() {
           >
             {puede(P.LIC_CREAR) && (
               <button onClick={() => setModalNueva(true)} className="btn-oro">
-                <Icono e="➕" /> Generar la primera
+                ➕ Generar la primera
               </button>
             )}
           </Vacio>
@@ -256,10 +256,10 @@ export default function Licencias() {
           {/* --- Licencias sin usar --- */}
           {libres.length > 0 && (
             <div>
-              <h2 className="font-display text-base font-semibold text-slate-700 mb-3">
+              <h2 className="font-serif text-base font-bold text-slate-700 mb-3">
                 Licencias pendientes de activar ({libres.length})
               </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              <div className="escalonar grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {libres.map((l) => {
                   const r = datosRol(l.rol || ROL_POR_DEFECTO)
                   return (
@@ -275,11 +275,11 @@ export default function Licencias() {
                       </p>
                       <div className="flex gap-2 mt-3">
                         <button onClick={() => copiar(l.codigo)} className="btn-ghost text-xs flex-1">
-                          <Icono e="📋" /> Copiar código
+                          📋 Copiar código
                         </button>
                         {puede(P.LIC_GESTIONAR) && (
                           <button onClick={() => borrar(l)} className="btn-ghost text-xs px-2 text-red-500">
-                            <Icono e="🗑️" />
+                            🗑️
                           </button>
                         )}
                       </div>
@@ -292,7 +292,7 @@ export default function Licencias() {
 
           {/* --- Cuadrilleros registrados --- */}
           <div>
-            <h2 className="font-display text-base font-semibold text-slate-700 mb-3">
+            <h2 className="font-serif text-base font-bold text-slate-700 mb-3">
               Cuadrilleros registrados ({usadas.length})
             </h2>
 
@@ -314,7 +314,7 @@ export default function Licencias() {
                       <th className="px-4 py-3"></th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="filas-entrada divide-y divide-slate-100">
                     {usadas.map((l) => {
                       const c = cuadrilleros.find((x) => x.id === l.uid)
                       const rolObj = c?.rol || l.rol || ROL_POR_DEFECTO
@@ -325,7 +325,7 @@ export default function Licencias() {
                       return (
                         <tr key={l.codigo} className="hover:bg-slate-50">
                           <td className="px-4 py-3 font-semibold text-slate-800 whitespace-nowrap">
-                            {rolObj === 'superadmin' && <Icono e="👑" tam={12} className="mr-1" />}
+                            {rolObj === 'superadmin' && '👑 '}
                             {c?.nombre && c?.apellidos
                               ? `${c.nombre}, ${c.apellidos}`
                               : l.nombre_cuadrillero || c?.nombre_completo || '—'}
@@ -369,7 +369,7 @@ export default function Licencias() {
                               </div>
                             ) : (
                               <span className="text-xs text-slate-300">
-                                {soyYo ? '—' : 'Protegido'}
+                                {soyYo ? '—' : '🔒 Protegido'}
                               </span>
                             )}
                           </td>

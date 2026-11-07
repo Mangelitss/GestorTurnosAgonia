@@ -7,7 +7,6 @@ import { SECCIONES } from '../lib/constantes'
 import { varasDeTurno } from '../lib/cuadrante'
 import { escalaCalor, RANGO_AVISO_CM, FLEXION_VARA_CM } from '../lib/estadisticas'
 
-import { Icono } from './Iconos'
 // --- Resumen compacto bajo cada vara ---
 export function ResumenVara({ stats, vara, seccion }) {
   const g = stats?.grupos?.[vara]?.[seccion]
@@ -58,7 +57,7 @@ export default function EstadisticasTurno({ stats, turno }) {
         onClick={() => setAbierto((a) => !a)}
         className="w-full flex items-center gap-2.5 px-5 py-2.5 hover:bg-slate-50 transition text-left"
       >
-        <span className="text-sm font-semibold text-slate-600"><Icono e="📊" /> Estadísticas</span>
+        <span className="text-sm font-semibold text-slate-600">📊 Estadísticas</span>
 
         {stats.avisos.length > 0 && (
           <span className="chip bg-amber-100 text-amber-800">
@@ -74,14 +73,14 @@ export default function EstadisticasTurno({ stats, turno }) {
       </button>
 
       {abierto && (
-        <div className="px-5 pb-5 space-y-4 bg-slate-50/50">
+        <div className="animate-subir px-5 pb-5 space-y-4 bg-slate-50/50">
 
           {/* ---- Avisos ---- */}
           {stats.avisos.length > 0 && (
             <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 space-y-1">
               {stats.avisos.map((a, i) => (
                 <p key={i} className="text-xs text-amber-900 flex gap-1.5">
-                  <span><Icono e="⚠️" /></span>
+                  <span>⚠️</span>
                   <span>{a.texto}</span>
                 </p>
               ))}
@@ -314,7 +313,7 @@ function EquilibrioVaras({ stats }) {
 
       {difTotal >= 3 && (
         <p className="text-[11px] text-amber-700 mt-1.5 text-center">
-          <Icono e="⚠️" /> Las dos varas se llevan {difTotal.toFixed(1)} cm: el trono puede escorarse hacia{' '}
+          ⚠️ Las dos varas se llevan {difTotal.toFixed(1)} cm: el trono puede escorarse hacia{' '}
           {totalI > totalD ? 'la izquierda' : 'la derecha'}.
         </p>
       )}

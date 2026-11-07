@@ -6,7 +6,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import {
-  leerProcesion, guardarProcesion, indexarCenso, esArchivada,
+  leerProcesion, leerProcesiones, guardarProcesion, indexarCenso, esArchivada,
+  validarNombreEditado,
 } from '../lib/procesiones'
 import { leerCenso } from '../lib/censo'
 import { detectarConflictos } from '../lib/conflictos'
@@ -23,9 +24,9 @@ import { AvisoBloqueo, EstadoGuardado } from '../components/AvisoBloqueo'
 import { Page, Cargando, Modal, Alerta, Toast, Segmentado } from '../components/ui'
 
 const PESTANAS = [
-  { id: 'tramos', label: 'Tramos', icono: 'mapa' },
-  { id: 'turnos', label: 'Turnos', icono: 'personas' },
-  { id: 'revision', label: 'Revisión', icono: 'lupa' },
+  { id: 'tramos', label: 'Tramos', icono: '🗺️' },
+  { id: 'turnos', label: 'Turnos', icono: '👥' },
+  { id: 'revision', label: 'Revisión', icono: '🔎' },
 ]
 
 export default function ProcesionDetalle() {
@@ -106,27 +107,31 @@ export default function ProcesionDetalle() {
 
   const tipo = TIPOS_PROCESION[procesion.tipo] || TIPOS_PROCESION.extraordinaria
   const estado = ESTADOS_PROCESION[procesion.estado] || ESTADOS_PROCESION.borrador
+  const esLetra = tipo.icono.length === 1 && /[A-Z]/.test(tipo.icono)
 
   return (
     <Page>
       {/* ---------- CABECERA ---------- */}
       <div className="flex items-start justify-between gap-4 mb-5 flex-wrap">
         <div className="min-w-0">
-          <Link to="/procesiones" className="text-[15px] text-morado hover:opacity-70 transition-opacity mb-1.5 inline-block">
-            ‹ Procesiones
+          <Link to="/procesiones" className="text-sm text-slate-500 hover:text-morado mb-1 inline-block">
+            ← Volver a procesiones
           </Link>
-          <h1 className="font-display text-[32px] leading-[1.12] font-bold tracking-[-0.022em] text-slate-800 flex items-center gap-3 flex-wrap">
+          <h1 className="font-serif text-2xl font-bold text-morado flex items-center gap-3 flex-wrap">
+            <span className={esLetra ? 'font-serif' : ''}>{tipo.icono}</span>
             {procesion.nombre}
             <span className={`chip ${estado.chip}`}>{estado.nombre}</span>
           </h1>
-          <p className="text-slate-500 text-[15px] mt-1.5 flex items-center gap-3 flex-wrap">
+          <p className="text-slate-500 text-sm mt-1 flex items-center gap-3 flex-wrap">
             {tipo.nombre} · {procesion.anio}
             {!soloLectura && (
               <button
                 onClick={() => setModalDatos(true)}
-                className="btn-ghost !min-h-0 py-1 px-3 text-xs"
+                className="inline-flex items-center gap-1.5 rounded-full border border-oro
+                           bg-oro/15 px-3 py-1 text-xs font-semibold text-oro-dark shadow-sm
+                           transition hover:bg-oro hover:text-morado-dark"
               >
-                Editar datos
+                ✏️ Editar datos
               </button>
             )}
           </p>
@@ -181,8 +186,14 @@ export default function ProcesionDetalle() {
       )}
 
       {/* ---------- PESTAÑAS ---------- */}
-      <Segmentado className="mb-5" valor={pestana} onCambiar={setPestana} opciones={PESTANAS} />
+      <Segmentado
+        className="mb-5"
+        valor={pestana}
+        onCambiar={setPestana}
+        opciones={PESTANAS.map((p) => ({ id: p.id, label: <><span>{p.icono}</span> {p.label}</> }))}
+      />
 
+      <div key={pestana} className="animate-subir">
       {/* Leyenda visible en la pestaña de turnos */}
       {pestana === 'turnos' && (
         <div className="card p-3 mb-4">
@@ -222,6 +233,8 @@ export default function ProcesionDetalle() {
         />
       )}
 
+      </div>
+
       <ModalDatos
         abierto={modalDatos}
         procesion={procesion}
@@ -240,6 +253,8 @@ export default function ProcesionDetalle() {
 
 function ModalDatos({ abierto, procesion, onCerrar, onGuardar }) {
   const [f, setF] = useState({})
+  const [otras, setOtras] = useState(null)
+  const [error, setError] = useState('')
 
   useEffect(() => {
     if (abierto && procesion) {
@@ -249,17 +264,33 @@ function ModalDatos({ abierto, procesion, onCerrar, onGuardar }) {
         fecha_iso: procesion.fecha_iso || '',
         lleva_cruz: procesion.lleva_cruz !== false,
       })
+      setError('')
     }
   }, [abierto, procesion])
 
-  const set = (k, v) => setF((x) => ({ ...x, [k]: v }))
+  // Las demás procesiones, para no repetir nombre
+  useEffect(() => {
+    if (!abierto) return
+    let vivo = true
+    setOtras(null)
+    leerProcesiones()
+      .then((lista) => { if (vivo) setOtras(lista) })
+      .catch(() => { if (vivo) setOtras([]) })
+    return () => { vivo = false }
+  }, [abierto])
+
+  const set = (k, v) => { setF((x) => ({ ...x, [k]: v })); setError('') }
+
+  const guardar = (e) => {
+    e.preventDefault()
+    const fallo = validarNombreEditado(f.nombre, procesion.id, otras || [])
+    if (fallo) return setError(fallo)
+    onGuardar({ ...f, nombre: f.nombre.trim() })
+  }
 
   return (
     <Modal abierto={abierto} onCerrar={onCerrar} titulo="Datos de la procesión">
-      <form
-        onSubmit={(e) => { e.preventDefault(); onGuardar(f) }}
-        className="space-y-4"
-      >
+      <form onSubmit={guardar} className="space-y-4">
         <div>
           <label className="label">Nombre</label>
           <input
@@ -299,9 +330,13 @@ function ModalDatos({ abierto, procesion, onCerrar, onGuardar }) {
           </span>
         </label>
 
+        {error && <Alerta tipo="error">{error}</Alerta>}
+
         <div className="flex gap-2 justify-end pt-2">
           <button type="button" onClick={onCerrar} className="btn-ghost">Cancelar</button>
-          <button type="submit" className="btn-morado">Guardar</button>
+          <button type="submit" className="btn-morado" disabled={otras === null}>
+            {otras === null ? 'Comprobando…' : 'Guardar'}
+          </button>
         </div>
       </form>
     </Modal>

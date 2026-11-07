@@ -178,15 +178,3 @@
 /* Tiras que se deslizan en horizontal (pestañas, turnos) sin barra visible */
 .sin-barra { scrollbar-width: none; -webkit-overflow-scrolling: touch; }
 .sin-barra::-webkit-scrollbar { display: none; }
-
-/* Quien pide menos movimiento, lo tiene */
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation-duration: 0.01ms !important;
-    animation-delay: 0ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    transition-delay: 0ms !important;
-  }
-  .revelar { opacity: 1; transform: none; }
-}

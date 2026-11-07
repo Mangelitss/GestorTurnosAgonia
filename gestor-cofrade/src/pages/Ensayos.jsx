@@ -15,7 +15,6 @@ import { P } from '../lib/roles'
 import { useAuth } from '../context/AuthContext'
 import { Page, PageHeader, Cargando, Vacio, Modal, Alerta, Toast } from '../components/ui'
 
-import { Icono } from '../components/Iconos'
 export default function Ensayos() {
   const { puede } = useAuth()
   const puedeEditar = puede(P.ENSAYOS_EDITAR)
@@ -79,7 +78,7 @@ export default function Ensayos() {
 
   const eliminar = async (e) => {
     const aviso = e.evento_id
-      ? `¿BORRAR definitivamente el ensayo del ${fechaBonita(e.fecha_iso)}?\n\nSe borrará TAMBIÉN su convocatoria del calendario.\n\nEsta acción no se puede deshacer.`
+      ? `¿BORRAR definitivamente el ensayo del ${fechaBonita(e.fecha_iso)}?\n\n⚠️ Se borrará TAMBIÉN su convocatoria del calendario.\n\nEsta acción no se puede deshacer.`
       : `¿BORRAR definitivamente el ensayo del ${fechaBonita(e.fecha_iso)}?\n\nEsta acción no se puede deshacer.`
 
     if (!confirm(aviso)) return
@@ -94,11 +93,12 @@ export default function Ensayos() {
     <Page>
       <PageHeader
         titulo="Ensayos"
+        icono="📋"
         subtitulo={`${abiertos.length} abierto(s) · ${archivados.length} archivado(s)`}
       >
         {puedeEditar && (
           <button onClick={() => setModalNuevo(true)} className="btn-oro">
-            <Icono e="➕" /> Nuevo ensayo
+            ➕ Nuevo ensayo
           </button>
         )}
       </PageHeader>
@@ -115,10 +115,10 @@ export default function Ensayos() {
             <div className="flex gap-2">
               {puedeEditar && (
                 <button onClick={() => setModalNuevo(true)} className="btn-oro">
-                  <Icono e="➕" /> Crear ensayo
+                  ➕ Crear ensayo
                 </button>
               )}
-              <Link to="/calendario" className="btn-ghost"><Icono e="📅" /> Ir al calendario</Link>
+              <Link to="/calendario" className="btn-ghost">📅 Ir al calendario</Link>
             </div>
           </Vacio>
         </div>
@@ -127,7 +127,7 @@ export default function Ensayos() {
 
           {/* --- ABIERTOS --- */}
           <section>
-            <h2 className="font-display text-base font-semibold text-slate-700 mb-3 flex items-center gap-2">
+            <h2 className="font-serif text-base font-bold text-slate-700 mb-3 flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-emerald-500" />
               Ensayos abiertos ({abiertos.length})
             </h2>
@@ -137,7 +137,7 @@ export default function Ensayos() {
                 No hay ningún ensayo abierto ahora mismo.
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+              <div className="escalonar grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                 {abiertos.map((e) => (
                   <TarjetaEnsayo
                     key={e.id} ensayo={e} puedeEditar={puedeEditar}
@@ -151,11 +151,11 @@ export default function Ensayos() {
           {/* --- ARCHIVADOS --- */}
           {archivados.length > 0 && (
             <section>
-              <h2 className="font-display text-base font-semibold text-slate-700 mb-3 flex items-center gap-2">
+              <h2 className="font-serif text-base font-bold text-slate-700 mb-3 flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-slate-400" />
                 Ensayos archivados ({archivados.length})
               </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+              <div className="escalonar grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                 {archivados.map((e) => (
                   <TarjetaEnsayo
                     key={e.id} ensayo={e} puedeEditar={puedeEditar}
@@ -197,7 +197,7 @@ function TarjetaEnsayo({ ensayo, puedeEditar, onArchivar, onReabrir, onBorrar })
           <p className="text-xs text-slate-400 uppercase tracking-wide">
             {diaSemana(ensayo.fecha_iso)}
           </p>
-          <h3 className="font-display text-lg font-semibold text-morado">
+          <h3 className="font-serif text-lg font-bold text-morado">
             {fechaBonita(ensayo.fecha_iso)}
           </h3>
           <p className="text-sm text-slate-500 mt-0.5">
@@ -205,7 +205,7 @@ function TarjetaEnsayo({ ensayo, puedeEditar, onArchivar, onReabrir, onBorrar })
           </p>
           {ensayo.evento_id && (
             <p className="text-[11px] text-slate-400 mt-1 flex items-center gap-1">
-              <Icono e="🔗" /> Unido al calendario
+              🔗 Unido al calendario
             </p>
           )}
         </div>
@@ -215,7 +215,7 @@ function TarjetaEnsayo({ ensayo, puedeEditar, onArchivar, onReabrir, onBorrar })
       {/* Datos rápidos */}
       <div className="flex gap-2 mb-4 flex-wrap">
         <span className="chip bg-morado/10 text-morado">
-          <Icono e="👥" /> {numAsistentes} asistente{numAsistentes === 1 ? '' : 's'}
+          👥 {numAsistentes} asistente{numAsistentes === 1 ? '' : 's'}
         </span>
         {r ? (
           <>
@@ -241,17 +241,17 @@ function TarjetaEnsayo({ ensayo, puedeEditar, onArchivar, onReabrir, onBorrar })
 
       <div className="flex gap-2 flex-wrap">
         <Link to={`/ensayos/${ensayo.id}`} className="btn-morado text-xs flex-1">
-          {archivado ? 'Ver' : 'Abrir'}
+          {archivado ? '👁️ Ver' : '✏️ Abrir'}
         </Link>
 
         {puedeEditar && !archivado && onArchivar && (
           <button onClick={() => onArchivar(ensayo)} className="btn-ghost text-xs" title="Archivar">
-            <Icono e="📦" />
+            📦
           </button>
         )}
         {puedeEditar && archivado && onReabrir && (
           <button onClick={() => onReabrir(ensayo)} className="btn-ghost text-xs" title="Reabrir">
-            <Icono e="🔓" />
+            🔓
           </button>
         )}
         {puedeEditar && (
@@ -260,7 +260,7 @@ function TarjetaEnsayo({ ensayo, puedeEditar, onArchivar, onReabrir, onBorrar })
             className="btn-ghost text-xs px-2 text-red-500"
             title="Borrar"
           >
-            <Icono e="🗑️" />
+            🗑️
           </button>
         )}
       </div>
