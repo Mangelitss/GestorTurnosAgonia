@@ -255,8 +255,8 @@ export function pdfCuadrante(ensayo, cuadrante) {
 //  PDF DE LA LISTA DE ASISTENTES
 // =============================================================
 
-export function pdfAsistentes(ensayo, asistentes) {
-  if (!asistentes?.length) {
+export function pdfAsistentes(ensayo, asistentes, ausentes = []) {
+  if (!asistentes?.length && !ausentes.length) {
     alert('Este ensayo todavía no tiene asistentes apuntados.')
     return
   }
@@ -279,6 +279,7 @@ export function pdfAsistentes(ensayo, asistentes) {
     <p class="subtitulo">
       ${fechaBonita(ensayo.fecha_iso)} · ${escapar(ensayo.hora)} · ${escapar(ensayo.lugar)}
       &nbsp;·&nbsp; <b>${ordenados.length} asistentes</b>
+      ${ausentes.length ? `&nbsp;·&nbsp; <b>${ausentes.length} ausentes</b>` : ''}
     </p>
     <table class="lista">
       <thead>
@@ -286,6 +287,21 @@ export function pdfAsistentes(ensayo, asistentes) {
       </thead>
       <tbody>${filas}</tbody>
     </table>
+    ${ausentes.length ? `
+      <h2 class="titulo" style="margin-top:24px">Apuntados que no vinieron</h2>
+      <table class="lista">
+        <thead><tr><th>#</th><th>Costalero</th><th>Altura</th></tr></thead>
+        <tbody>${[...ausentes]
+          .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es', { sensitivity: 'base' }))
+          .map((a, i) => `
+            <tr>
+              <td style="width:30px;color:#999">${i + 1}</td>
+              <td><b>${escapar(a.nombre)}</b></td>
+              <td style="width:80px">${a.altura || '—'} cm</td>
+            </tr>
+          `).join('')}</tbody>
+      </table>
+    ` : ''}
   `
 
   imprimir(`Asistencia ensayo ${fechaBonita(ensayo.fecha_iso)}`, cuerpo, 'portrait')

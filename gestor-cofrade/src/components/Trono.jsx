@@ -17,10 +17,11 @@
 
 import { useState } from 'react'
 import { PIEZAS, CONFLICTOS } from '../lib/constantes'
-import { claveRef, mediaAltura, varasDeTurno } from '../lib/cuadrante'
+import { claveRef, mediaAltura, turnoBloqueado, varasDeTurno } from '../lib/cuadrante'
 import { preferencia, siglaHombro } from '../lib/hombros'
 import { estadisticasTurno, pesoDe, colorPeso } from '../lib/estadisticas'
 import EstadisticasTurno, { ResumenVara } from './EstadisticasTurno'
+import { TIPO_ARRASTRE } from './PanelCostaleros'
 
 const COLS = { 1: 'grid-cols-1', 2: 'grid-cols-2', 3: 'grid-cols-3', 4: 'grid-cols-4' }
 
@@ -47,6 +48,8 @@ export default function Trono({
   onAnadirHueco,
   onQuitarHueco,
   onLimpiarTurno,         // (t) => void
+  onBloquearTurno,        // (t) => void
+  onSoltarCostalero,      // (id, ref) => void  — arrastrado desde la lista lateral
   onInfoCostalero,        // (persona) => void  — solo en procesiones
 }) {
   const [arrastrando, setArrastrando] = useState(null)
@@ -60,8 +63,16 @@ export default function Trono({
     setArrastrando(ref)
   }
 
-  const soltar = (ref) => {
-    if (soloLectura || !arrastrando) return
+  const soltar = (ref, e) => {
+    if (soloLectura) return
+    const idDeLista = e?.dataTransfer?.getData(TIPO_ARRASTRE)
+    if (idDeLista) {
+      setArrastrando(null)
+      setEncima(null)
+      onSoltarCostalero?.(idDeLista, ref)
+      return
+    }
+    if (!arrastrando) return
     if (claveRef(arrastrando) !== claveRef(ref)) onIntercambiar(arrastrando, ref)
     setArrastrando(null)
     setEncima(null)
@@ -86,7 +97,7 @@ export default function Trono({
     onDragStart: () => iniciarArrastre(ref, persona),
     onDragOver: (e) => { e.preventDefault(); setEncima(claveRef(ref)) },
     onDragLeave: () => setEncima(null),
-    onDrop: (e) => { e.preventDefault(); soltar(ref) },
+    onDrop: (e) => { e.preventDefault(); soltar(ref, e) },
     onClickVacio: () => !soloLectura && onPedirCostalero(ref),
     onQuitar: () => onQuitar(ref),
     onBloquear: () => onBloquear(ref),
@@ -134,7 +145,22 @@ export default function Trono({
                 </div>
                 <div className="flex items-center gap-3">
                   <ResumenTurno turno={turno} />
-                  {!soloLectura && onLimpiarTurno && (
+                  {!soloLectura && onBloquearTurno && (
+                    <button
+                      onClick={() => onBloquearTurno(t)}
+                      className={`text-xs px-2.5 py-1 rounded border transition ${
+                        turnoBloqueado(cuadrante, t)
+                          ? 'bg-oro border-oro text-morado-dark font-semibold'
+                          : 'border-white/20 text-white/70 hover:bg-white/10 hover:text-white'
+                      }`}
+                      title={turnoBloqueado(cuadrante, t)
+                        ? 'Desbloquear a todos los costaleros de este turno'
+                        : 'Bloquear a todos los costaleros de este turno'}
+                    >
+                      {turnoBloqueado(cuadrante, t) ? '🔓 Desbloquear turno' : '🔒 Bloquear turno'}
+                    </button>
+                  )}
+                  {!soloLectura && onLimpiarTurno && !turnoBloqueado(cuadrante, t) && (
                     <button
                       onClick={() => onLimpiarTurno(t)}
                       className="text-xs px-2.5 py-1 rounded border border-white/20 text-white/70
@@ -390,7 +416,7 @@ function Posicion({
       onDragOver={onDragOver}
       onDragLeave={onDragLeave}
       onDrop={onDrop}
-      className={`flex items-center gap-1.5 px-2 py-1.5 rounded-md border text-xs transition-all duration-200 group
+      className={`relative flex items-center gap-1.5 px-2 py-1.5 rounded-md border text-xs transition-all duration-200 group
                   hover:-translate-y-px hover:shadow-md
                   ${estiloCalor ? '' : estilo} ${esDestino ? 'ring-2 ring-oro scale-[1.03]' : ''}
                   ${!soloLectura && !persona.bloqueado ? 'cursor-move' : ''}`}
@@ -428,11 +454,11 @@ function Posicion({
           : (persona.altura || '—')}
       </span>
 
-      <span className="flex gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+      <span className="flex gap-0.5 shrink-0 rounded group-hover:bg-inherit [@media(hover:hover)]:absolute [@media(hover:hover)]:right-1 [@media(hover:hover)]:inset-y-0 [@media(hover:hover)]:my-auto [@media(hover:hover)]:h-fit [@media(hover:hover)]:pointer-events-none [@media(hover:hover)]:group-hover:pointer-events-auto">
         {onInfo && (
           <button
             onClick={onInfo}
-            className={`px-0.5 rounded hover:bg-black/10 ${fondoOscuro ? 'text-white' : 'text-slate-400 hover:text-sky-600'}`}
+            className={`px-0.5 rounded hover:bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity ${fondoOscuro ? 'text-white' : 'text-slate-400 hover:text-sky-600'}`}
             title="Ver su orden procesional"
           >
             ℹ️
@@ -442,7 +468,7 @@ function Posicion({
           <>
             <button
               onClick={onBloquear}
-              className={`px-0.5 rounded hover:bg-black/10 ${fondoOscuro ? 'text-white' : 'text-slate-400 hover:text-morado'}`}
+              className={`px-0.5 rounded hover:bg-black/10 opacity-0 group-hover:opacity-100 [@media(hover:none)]:opacity-100 transition-opacity ${fondoOscuro ? 'text-white' : 'text-slate-400 hover:text-morado'}`}
               title={persona.bloqueado ? 'Desbloquear' : 'Bloquear en esta posición'}
             >
               {persona.bloqueado ? '🔓' : '🔒'}
@@ -450,7 +476,7 @@ function Posicion({
             {!persona.bloqueado && (
               <button
                 onClick={onQuitar}
-                className={`px-0.5 rounded hover:bg-black/10 ${fondoOscuro ? 'text-white' : 'text-slate-400 hover:text-red-500'}`}
+                className={`px-0.5 rounded hover:bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity ${fondoOscuro ? 'text-white' : 'text-slate-400 hover:text-red-500'}`}
                 title="Quitar de esta posición"
               >
                 ✕

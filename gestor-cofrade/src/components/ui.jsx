@@ -23,7 +23,7 @@ export function PageHeader({ titulo, subtitulo, icono, children }) {
 
 // --- Contenedor de pagina ---
 export function Page({ children }) {
-  return <div className="p-8 max-w-[1600px] mx-auto">{children}</div>
+  return <div className="p-4 md:p-8 max-w-[1600px] mx-auto">{children}</div>
 }
 
 // --- Spinner de carga ---

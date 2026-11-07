@@ -15,7 +15,10 @@ import {
   detectarDuplicados, idsColocados, intercambiar, quitarDe, alternarBloqueo,
   colocarEn, meterEnPrimerHueco, anadirHueco, quitarHueco, anadirTurno,
   quitarTurno, resumen, huecos, limpiarTurno, contarLimpieza, ocupantes,
+  alternarBloqueoTurno, leerPos,
 } from '../lib/cuadrante'
+import { completarHuecos } from '../lib/completarHuecos'
+import { apuntadosDelEnsayo, aplicarPaseLista } from '../lib/paseLista'
 import { leerCenso, crearCostalero, costaleroVacio, normalizar } from '../lib/censo'
 import { fechaBonita, diaSemana, leerOpciones } from '../lib/calendario'
 import { pdfCuadrante, pdfAsistentes } from '../lib/pdf'
@@ -31,6 +34,10 @@ import { P } from '../lib/roles'
 import { useAuth, nombreConComa } from '../context/AuthContext'
 import { estadisticasTurno, FLEXION_VARA_CM } from '../lib/estadisticas'
 import Trono from '../components/Trono'
+import PanelCostaleros, { ModalCompletar } from '../components/PanelCostaleros'
+import PaseLista, {
+  ModalRecalcular, leerBorrador, guardarBorrador, borrarBorrador,
+} from '../components/PaseLista'
 import SelectorAlgoritmo from '../components/SelectorAlgoritmo'
 import { LeyendaCalor } from '../components/EstadisticasTurno'
 import { AvisoBloqueo, EstadoGuardado } from '../components/AvisoBloqueo'
@@ -54,6 +61,10 @@ export default function EnsayoDetalle() {
   const [altaRapida, setAltaRapida] = useState(null)       // nombre tecleado que no existe
   const [tardon, setTardon] = useState(null)               // asistente añadido con cuadrante ya hecho
   const [mapaCalor, setMapaCalor] = useState(false)
+  const [paseAbierto, setPaseAbierto] = useState(false)
+  const [marcas, setMarcas] = useState(() => new Set())    // ids marcados al pasar lista
+  const [recalculo, setRecalculo] = useState(null)         // datos para recalcular el trono
+  const [vistaCompletar, setVistaCompletar] = useState(null)
 
   const avisar = (mensaje, tipo = 'exito') => setToast({ mensaje, tipo })
 
@@ -118,6 +129,7 @@ export default function EnsayoDetalle() {
 
   // --- Datos derivados ---
   const asistentes = ensayo?.asistentes || []
+  const ausentes = ensayo?.ausentes || []
   const cuadrante = ensayo?.cuadrante || null
   const config = ensayo?.config || configPorDefecto()
 
@@ -167,6 +179,130 @@ export default function EnsayoDetalle() {
     [asistentes, colocados]
   )
 
+  // --- Lista lateral ---
+  const idsAusentes = useMemo(() => new Set(ausentes.map((a) => a.costalero_id)), [ausentes])
+
+  const apuntados = useMemo(
+    () => apuntadosDelEnsayo({ asistentes, ausentes }),
+    [asistentes, ausentes]
+  )
+
+  // El panel trabaja con filas tipo censo (c.id)
+  const filasPanel = useMemo(
+    () => apuntados.map((a) => ({ ...censoPorId[a.costalero_id], ...a, id: a.costalero_id })),
+    [apuntados, censoPorId]
+  )
+
+  const asignaciones = useMemo(() => {
+    const m = {}
+    if (cuadrante) {
+      ocupantes(cuadrante).forEach(({ ref, p }) => {
+        if (!p.costalero_id) return
+        ;(m[p.costalero_id] ||= []).push({ pieza: 'trono', turno: cuadrante[ref.t].id })
+      })
+    }
+    return m
+  }, [cuadrante])
+
+  const filtrosEnsayo = useMemo(() => [
+    { id: 'todos', label: 'Todos', cumple: () => true },
+    { id: 'presentes', label: 'Presentes', cumple: (_, c) => !idsAusentes.has(c.id) },
+    { id: 'sin', label: 'Sin asignar', cumple: (a, c) => a.length === 0 && !idsAusentes.has(c.id) },
+    { id: 'ausentes', label: 'Ausentes', cumple: (_, c) => idsAusentes.has(c.id) },
+    { id: 'varios', label: 'Más de un turno', cumple: (a) => a.length > 1 },
+  ], [idsAusentes])
+
+  // =============================================================
+  //  PASAR LISTA
+  // =============================================================
+
+  const abrirPase = () => {
+    // Si se quedo a medias, sigue donde iba. Si ya se paso, parte de lo marcado.
+    const inicio = leerBorrador(id)
+      || (ensayo.pase_lista ? new Set(asistentes.map((a) => a.costalero_id)) : new Set())
+    setMarcas(inicio)
+    setPaseAbierto(true)
+  }
+
+  const alternarMarca = (idCostalero, valor) => {
+    setMarcas((m) => {
+      const nueva = new Set(m)
+      const poner = valor === undefined ? !nueva.has(idCostalero) : valor
+      if (poner) nueva.add(idCostalero)
+      else nueva.delete(idCostalero)
+      guardarBorrador(id, nueva)
+      return nueva
+    })
+  }
+
+  // No se espera a la nube: con un corte de conexion el guardado se
+  // queda en cola y se envia al volver, sin parar el ensayo.
+  const cerrarLista = (presentes) => {
+    const { cambios, bloqueadosFuera } = aplicarPaseLista({ ...ensayo, asistentes, ausentes }, presentes)
+    borrarBorrador(id)
+    setPaseAbierto(false)
+    guardar(cambios)
+
+    const pendientes = cambios.asistentes.some(
+      (a) => cambios.cuadrante && !idsColocados(cambios.cuadrante).has(a.costalero_id)
+    )
+    if (cambios.cuadrante && (pendientes || huecos(cambios.cuadrante).length > 0)) {
+      setRecalculo({
+        cuadrante: cambios.cuadrante,
+        asistentes: cambios.asistentes,
+        ausentes: cambios.ausentes,
+        bloqueadosFuera,
+      })
+    } else {
+      avisar(`Lista pasada: ${cambios.asistentes.length} presentes, ${cambios.ausentes.length} ausentes.`)
+    }
+  }
+
+  const haLlegado = (persona) => {
+    const presentes = new Set(asistentes.map((a) => a.costalero_id))
+    presentes.add(persona.costalero_id)
+    cerrarLista(presentes)
+  }
+
+  const aplicarRecalculo = (nuevo, mensaje) => {
+    setRecalculo(null)
+    guardar({ cuadrante: nuevo }, mensaje)
+  }
+
+  // --- Arrastrar desde la lista lateral ---
+  const opSoltarCostalero = (idCostalero, ref) => {
+    const persona = asistentes.find((a) => a.costalero_id === idCostalero)
+    if (!persona || !cuadrante) return
+    const actual = leerPos(cuadrante, ref)
+    if (actual?.costalero_id === idCostalero) return
+    if (actual?.bloqueado) return avisar('Esa posición está bloqueada.', 'error')
+
+    const enEsteTurno = ocupantes(cuadrante).some(
+      (x) => x.ref.t === ref.t && x.p.costalero_id === idCostalero
+    )
+    if (enEsteTurno) return avisar(`${persona.nombre} ya está en este turno.`, 'error')
+    if (actual && !confirm(`¿Sustituir a ${actual.nombre} por ${persona.nombre}?`)) return
+
+    const otros = asignaciones[idCostalero] || []
+    const r = colocarEn(cuadrante, ref, otros.length ? { ...persona, repetidor: true } : persona)
+    if (r.error) return avisar(r.error, 'error')
+    setCuadranteLocal(r.cuadrante)
+    if (otros.length) avisar(`${persona.nombre} ya estaba en Turno ${otros.map((a) => a.turno).join(', ')}.`, 'info')
+  }
+
+  const prepararCompletar = (conRepetidores) => {
+    if (!cuadrante) return
+    const vistos = new Set()
+    const repetidores = conRepetidores
+      ? ocupantes(cuadrante)
+        .map((x) => x.p)
+        .filter((p) => p.costalero_id && !p.repetidor)
+        .filter((p) => censoPorId[p.costalero_id]?.puede_repetir !== false)
+        .filter((p) => !vistos.has(p.costalero_id) && vistos.add(p.costalero_id))
+      : []
+    setVistaCompletar(completarHuecos(cuadrante, sinColocar, { censoPorId, repetidores }))
+  }
+
   // =============================================================
   //  ASISTENCIA
   // =============================================================
@@ -175,6 +311,13 @@ export default function EnsayoDetalle() {
     const nuevo = comoAsistente(costalero)
     const lista = anadirAsistente(asistentes, nuevo)
     if (lista === asistentes) { avisar('Ese costalero ya está apuntado.', 'error'); return }
+
+    // Llega sin estar apuntado mientras se pasa lista: queda presente
+    if (paseAbierto) {
+      guardar({ asistentes: lista })
+      alternarMarca(nuevo.costalero_id, true)
+      return
+    }
 
     await guardar({ asistentes: lista })
 
@@ -442,7 +585,12 @@ export default function EnsayoDetalle() {
             ultimoGuardado={ultimoGuardado}
             onGuardar={() => guardar(null, 'Cambios guardados.')}
           />
-          <button onClick={() => pdfAsistentes(ensayo, asistentes)} className="btn-ghost text-xs">
+          {!soloLectura && apuntados.length > 0 && (
+            <button onClick={abrirPase} className="btn-oro text-xs">
+              ✅ Pasar lista
+            </button>
+          )}
+          <button onClick={() => pdfAsistentes(ensayo, asistentes, ausentes)} className="btn-ghost text-xs">
             📋 PDF asistentes
           </button>
           <button onClick={() => pdfCuadrante(ensayo, cuadrante)} className="btn-ghost text-xs">
@@ -485,6 +633,20 @@ export default function EnsayoDetalle() {
       )}
 
       {/* ---------- AVISOS ---------- */}
+      {ausentes.length > 0 && (
+        <div className="mb-5">
+          <Alerta tipo="aviso">
+            <details>
+              <summary className="cursor-pointer">
+                <b>{ausentes.length} apuntado{ausentes.length === 1 ? '' : 's'}</b> no {ausentes.length === 1 ? 'ha' : 'han'} venido.
+                Pulsa para ver quién.
+              </summary>
+              <p className="mt-1.5">{ausentes.map((a) => a.nombre).join(' · ')}</p>
+            </details>
+          </Alerta>
+        </div>
+      )}
+
       {duplicados.length > 0 && (
         <div className="mb-5">
           <Alerta tipo="error">
@@ -525,7 +687,7 @@ export default function EnsayoDetalle() {
           {!soloLectura && (
             <BuscadorCostaleros
               censo={censo}
-              yaApuntados={new Set(asistentes.map((a) => a.costalero_id))}
+              yaApuntados={new Set(apuntados.map((a) => a.costalero_id))}
               onElegir={apuntar}
               onNoExiste={(nombre) => setAltaRapida(nombre)}
             />
@@ -596,7 +758,8 @@ export default function EnsayoDetalle() {
         </div>
 
         {/* ---- Columna del trono ---- */}
-        <div>
+        <div className="flex items-start gap-4 min-w-0">
+        <div className="flex-1 min-w-0">
           {!cuadrante ? (
             <div className="card">
               <Vacio
@@ -692,13 +855,69 @@ export default function EnsayoDetalle() {
                 onAnadirHueco={opAnadirHueco}
                 onQuitarHueco={opQuitarHueco}
                 onLimpiarTurno={opLimpiarTurno}
+                onBloquearTurno={(t) => setCuadranteLocal(alternarBloqueoTurno(cuadrante, t).cuadrante)}
+                onSoltarCostalero={opSoltarCostalero}
               />
             </>
           )}
         </div>
+
+        <PanelCostaleros
+          apuntados={filasPanel}
+          asignaciones={asignaciones}
+          censoPorId={censoPorId}
+          nombrePieza="Trono"
+          puedeArrastrar={!soloLectura && !!cuadrante}
+          puedeCompletar={!!cuadrante && huecos(cuadrante).length > 0}
+          soloLectura={soloLectura}
+          onCompletar={prepararCompletar}
+          filtros={filtrosEnsayo}
+          ausentes={idsAusentes}
+          onHaLlegado={soloLectura ? null : haLlegado}
+          abiertoInicial={window.innerWidth >= 1700}
+        />
+        </div>
       </div>
 
       {/* ---------- MODALES ---------- */}
+
+      <PaseLista
+        abierto={paseAbierto}
+        apuntados={apuntados}
+        marcas={marcas}
+        buscador={(
+          <BuscadorCostaleros
+            censo={censo}
+            yaApuntados={new Set(apuntados.map((a) => a.costalero_id))}
+            onElegir={apuntar}
+            onNoExiste={(nombre) => setAltaRapida(nombre)}
+          />
+        )}
+        onAlternar={(idCostalero) => alternarMarca(idCostalero)}
+        onCerrar={() => setPaseAbierto(false)}
+        onTerminar={() => cerrarLista(marcas)}
+      />
+
+      <ModalRecalcular
+        datos={recalculo}
+        config={config}
+        algoritmo={ensayo.algoritmo || ALGORITMO_POR_DEFECTO}
+        censoPorId={censoPorId}
+        onCerrar={() => setRecalculo(null)}
+        onAplicar={aplicarRecalculo}
+      />
+
+      <ModalCompletar
+        resultado={vistaCompletar}
+        cuadrante={vistaCompletar?.cuadrante}
+        nombrePieza="Trono"
+        onCerrar={() => setVistaCompletar(null)}
+        onAplicar={() => {
+          setCuadranteLocal(vistaCompletar.cuadrante)
+          avisar(`${vistaCompletar.colocados.length} costalero(s) colocados.`)
+          setVistaCompletar(null)
+        }}
+      />
 
       <ModalGenerar
         abierto={modalGenerar}

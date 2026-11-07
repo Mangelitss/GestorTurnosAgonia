@@ -29,6 +29,7 @@ export default function Layout({ children }) {
   const contenido = useRef(null)
   const menu = useRef(null)
   const [marca, setMarca] = useState(null)
+  const [menuAbierto, setMenuAbierto] = useState(false)
 
   const salir = async () => {
     if (confirm('¿Quieres cerrar la sesión?')) {
@@ -54,11 +55,12 @@ export default function Layout({ children }) {
     medir()
     window.addEventListener('resize', medir)
     return () => window.removeEventListener('resize', medir)
-  }, [pathname, visibles.length])
+  }, [pathname, visibles.length, menuAbierto])
 
   // ---- Al cambiar de pantalla: arriba del todo y entrada suave ----
   useEffect(() => {
     if (principal.current) principal.current.scrollTop = 0
+    setMenuAbierto(false)
     contenido.current?.animate?.(
       [
         { opacity: 0, transform: 'translateY(14px)' },
@@ -69,10 +71,34 @@ export default function Layout({ children }) {
   }, [pathname])
 
   return (
-    <div className="h-screen flex bg-slate-100 overflow-hidden">
+    <div className="h-dvh flex flex-col md:flex-row bg-slate-100 overflow-hidden">
+
+      {/* ---------- BARRA SUPERIOR EN EL MOVIL ---------- */}
+      <div className="md:hidden flex items-center justify-between px-4 h-14 shrink-0 bg-morado text-oro">
+        <span className="font-serif font-bold">GESTOR COFRADE</span>
+        <button
+          type="button"
+          onClick={() => setMenuAbierto(true)}
+          aria-label="Abrir el menú"
+          className="w-11 h-11 text-2xl leading-none"
+        >
+          ☰
+        </button>
+      </div>
+
+      {menuAbierto && (
+        <div
+          className="md:hidden fixed inset-0 z-30 bg-black/50 animate-aparecer"
+          onClick={() => setMenuAbierto(false)}
+          aria-hidden="true"
+        />
+      )}
 
       {/* ---------- MENU LATERAL ---------- */}
-      <aside className="w-64 bg-gradient-to-b from-morado to-morado-dark flex flex-col shrink-0">
+      <aside
+        className={`w-64 bg-gradient-to-b from-morado to-morado-dark flex-col shrink-0 md:flex md:static
+                    max-md:fixed max-md:inset-y-0 max-md:left-0 max-md:z-40 ${menuAbierto ? 'flex animate-subir' : 'hidden'}`}
+      >
         <div className="px-6 py-7 border-b border-morado-light/30">
           <h1 className="font-serif text-xl font-bold text-oro leading-tight">
             GESTOR
