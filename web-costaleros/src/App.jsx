@@ -28,6 +28,7 @@ import CuadranteTurno from './components/CuadranteTurno'
 import Recorrido from './components/Recorrido'
 import InfoPublicacion, { TenerEnCuenta } from './components/InfoPublicacion'
 import Leyenda from './components/Leyenda'
+import Toques from './components/Toques'
 import { Cargando, Aviso, Vacio, Cruz, Filete } from './components/ui'
 
 // Se recuerda el NOMBRE, no el id: los ids cambian de una
@@ -47,6 +48,9 @@ function recordarNombre(nombre) {
 // vuelve a leer si han pasado mas de estos minutos. Es una lectura.
 const REFRESCO_MS = 2 * 60 * 1000
 
+// Pestaña fija de los toques del llamador
+const TOQUES = 'toques'
+
 export default function App() {
   const [estado, setEstado] = useState('comprobando')   // comprobando | codigo | dentro | error
   const [portal, setPortal] = useState(null)
@@ -60,10 +64,13 @@ export default function App() {
   const entrar = useCallback((p) => {
     leidoEn.current = Date.now()
     setPortal(p)
-    // Si lo que estaba seleccionado sigue publicado, se mantiene
-    setSeleccion((actual) =>
-      p.publicaciones?.some((x) => x.id === actual) ? actual : p.publicaciones?.[0]?.id || null
-    )
+    // Si lo que estaba seleccionado sigue publicado, se mantiene.
+    // Los toques siempre estan; sin nada publicado, se abren ellos.
+    setSeleccion((actual) => {
+      if (actual === TOQUES) return actual
+      if (p.publicaciones?.some((x) => x.id === actual)) return actual
+      return p.publicaciones?.[0]?.id || TOQUES
+    })
     setEstado('dentro')
   }, [])
 
@@ -148,15 +155,20 @@ export default function App() {
           />
         ) : (
           <>
-            {publicaciones.length > 1 && (
-              <Pestanas
-                publicaciones={publicaciones}
-                seleccion={seleccion}
-                onSeleccionar={(v) => { setSeleccion(v); setApartado('mia') }}
-              />
-            )}
+            <Pestanas
+              publicaciones={publicaciones}
+              seleccion={seleccion}
+              onSeleccionar={(v) => {
+                setSeleccion(v)
+                setApartado('mia')
+                // Cada pestaña empieza desde arriba del todo
+                window.scrollTo(0, 0)
+              }}
+            />
 
-            {!pub ? (
+            {seleccion === TOQUES ? (
+              <Toques />
+            ) : !pub ? (
               <div className="seccion">
                 <Vacio
                   titulo="Todavía no hay nada publicado"
@@ -223,7 +235,8 @@ function Cabecera() {
 
 // =============================================================
 //  PESTAÑAS: una por procesion o ensayo publicado
-//  En el movil se deslizan en horizontal si no caben.
+//  En el movil, si no caben, pasan a una segunda fila: asi se
+//  ven todas, tambien la de los toques, que va la ultima.
 // =============================================================
 function etiquetaPestana(p) {
   if (p.clase === 'ensayo') return { texto: 'Ensayo', extra: fechaCorta(p.fecha_iso) }
@@ -232,7 +245,7 @@ function etiquetaPestana(p) {
 
 function Pestanas({ publicaciones, seleccion, onSeleccionar }) {
   return (
-    <nav className="sin-barra flex overflow-x-auto border-b border-oro/30 bg-morado-black/60 px-1">
+    <nav className="flex flex-wrap justify-center border-b border-oro/30 bg-morado-black/60 px-1">
       {publicaciones.map((p) => {
         const { texto, extra } = etiquetaPestana(p)
         return (
@@ -246,6 +259,12 @@ function Pestanas({ publicaciones, seleccion, onSeleccionar }) {
           </button>
         )
       })}
+      <button
+        onClick={() => onSeleccionar(TOQUES)}
+        className={`pestana ${seleccion === TOQUES ? 'pestana-activa' : ''}`}
+      >
+        Toques
+      </button>
     </nav>
   )
 }
