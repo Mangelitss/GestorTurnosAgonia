@@ -451,7 +451,7 @@ export function pdfCalendarioMes(anio, mes, eventos) {
 
     filas += '<tr>' + semana.map((c) => {
       const evs = (porFecha[c.iso] || []).map((e) => `
-        <div class="ev"><b>${escapar(e.hora)}</b> ${escapar(e.tipo)}<br>${escapar(e.lugar)}</div>
+        <div class="ev"><b>${escapar(e.hora)}</b> ${escapar(e.titulo || e.tipo)}<br>${escapar(e.lugar)}</div>
       `).join('')
       return `<td class="${c.delMes ? '' : 'fuera'}">
         <div class="dia">${c.dia}</div>${c.delMes ? evs : ''}
@@ -487,7 +487,7 @@ export function pdfCalendarioListado(eventos, titulo = 'Listado de convocatorias
     <tr>
       <td style="width:110px"><b>${fechaBonita(e.fecha_iso)}</b></td>
       <td style="width:60px">${escapar(e.hora)}</td>
-      <td style="width:170px">${escapar(e.tipo)}</td>
+      <td style="width:170px">${escapar(e.titulo || e.tipo)}</td>
       <td style="width:160px">${escapar(e.lugar)}</td>
       <td>${escapar(e.indicaciones || '—')}</td>
     </tr>

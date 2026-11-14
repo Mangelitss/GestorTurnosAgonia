@@ -9,7 +9,7 @@ import { db, COL } from '../lib/firebase'
 import { useAuth, nombreConComa } from '../context/AuthContext'
 import { Page, StatCard, Cargando } from '../components/ui'
 import { TIPOS_PROCESION } from '../lib/constantes'
-import { fechaBonita } from '../lib/calendario'
+import { fechaBonita, leerAgenda, proximos, tituloEvento } from '../lib/calendario'
 import { P } from '../lib/roles'
 
 // Accesos principales del dashboard
@@ -77,12 +77,9 @@ export default function Dashboard() {
         // --- Proximo evento del calendario ---
         let evento = null
         try {
-          const snap = await getDocs(collection(db, COL.CALENDARIO))
-          const eventos = snap.docs
-            .map((d) => ({ id: d.id, ...d.data() }))
-            .filter((e) => e.fecha_iso && e.fecha_iso >= new Date().toISOString().slice(0, 10))
-            .sort((a, b) => a.fecha_iso.localeCompare(b.fecha_iso))
-          evento = eventos[0] || null
+          // Convocatorias, ensayos y procesiones, todo junto
+          const { eventos } = await leerAgenda()
+          evento = proximos(eventos, 1)[0] || null
         } catch { /* coleccion aun vacia */ }
 
         // --- Ensayos abiertos ---
@@ -235,13 +232,13 @@ export default function Dashboard() {
                 <div>
                   <div className="bg-oro/10 border border-oro/30 rounded-lg p-4 mb-3">
                     <p className="text-xs uppercase tracking-wide text-oro-dark font-bold">
-                      {proximoEvento.tipo || proximoEvento.motivo}
+                      {tituloEvento(proximoEvento)}
                     </p>
                     <p className="font-serif text-xl font-bold text-morado mt-1.5">
                       {fechaBonita(proximoEvento.fecha_iso)}
                     </p>
                     <p className="text-sm text-slate-600 mt-0.5">
-                      {proximoEvento.hora} · {proximoEvento.lugar}
+                      {[proximoEvento.hora, proximoEvento.lugar].filter(Boolean).join(' · ') || '—'}
                     </p>
                   </div>
                   {proximoEvento.indicaciones && (

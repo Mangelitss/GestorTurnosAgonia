@@ -1,18 +1,19 @@
 // =============================================================
-//  CALENDARIO — rejilla mensual de convocatorias
+//  CALENDARIO — rejilla mensual con TODO lo que tiene fecha:
+//  convocatorias, ensayos y procesiones (ver leerAgenda).
 // =============================================================
 
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import {
   MESES, DIAS_SEMANA, rejillaMes, agruparPorFecha, fechaBonita, hoyISO,
-  leerEventos, eventoVacio,
+  leerAgenda, eventoVacio, tituloEvento, TIPO_PROCESION,
   leerOpciones, anadirOpcion, borrarOpcion, esBase, estiloTipo, diaSemana,
 } from '../lib/calendario'
 import {
   TIPO_ENSAYO, esConvocatoriaDeEnsayo, crearEventoCompleto,
   actualizarEventoSincronizado, borrarEventoCompleto, convertirEnEnsayo,
-  cambiarMotivoYBorrarEnsayo, cambiarMotivoYDesvincular,
+  cambiarMotivoYBorrarEnsayo, cambiarMotivoYDesvincular, vincularEnsayoAlCalendario,
 } from '../lib/sincro'
 import { pdfCalendarioMes, pdfCalendarioListado } from '../lib/pdf'
 import { P } from '../lib/roles'
@@ -23,6 +24,7 @@ export default function Calendario() {
   const { puede } = useAuth()
   const puedeEditar = puede(P.CAL_EDITAR)
   const puedeEnsayos = puede(P.ENSAYOS_EDITAR)
+  const puedeProcesiones = puede(P.PROC_VER)
   const navigate = useNavigate()
 
   const hoy = new Date()
@@ -30,6 +32,7 @@ export default function Calendario() {
   const [mes, setMes] = useState(hoy.getMonth())
 
   const [eventos, setEventos] = useState([])
+  const [procesionesSinFecha, setProcesionesSinFecha] = useState([])
   const [opciones, setOpciones] = useState({ tipos: [], lugares: [] })
   const [cargando, setCargando] = useState(true)
   const [toast, setToast] = useState(null)
@@ -44,8 +47,9 @@ export default function Calendario() {
   const recargar = async () => {
     setCargando(true)
     try {
-      const [evs, ops] = await Promise.all([leerEventos(), leerOpciones()])
-      setEventos(evs)
+      const [agenda, ops] = await Promise.all([leerAgenda(), leerOpciones()])
+      setEventos(agenda.eventos)
+      setProcesionesSinFecha(agenda.procesionesSinFecha)
       setOpciones(ops)
     } catch (e) {
       console.error(e)
@@ -169,6 +173,25 @@ export default function Calendario() {
     }
   }
 
+  // --- Ensayo sin convocatoria: devolverlo al calendario ---
+  const vincular = async (entrada) => {
+    try {
+      await vincularEnsayoAlCalendario({
+        id: entrada.ensayo_id,
+        fecha_iso: entrada.fecha_iso,
+        hora: entrada.hora,
+        lugar: entrada.lugar,
+        notas: entrada.indicaciones,
+      })
+      avisar('Convocatoria creada y unida al ensayo.')
+      setDiaDetalle(null)
+      recargar()
+    } catch (e) {
+      console.error(e)
+      avisar('No se ha podido crear la convocatoria.', 'error')
+    }
+  }
+
   const abrirNuevo = (fechaISO) => {
     if (!puedeEditar) return
     setEditando({ ...eventoVacio(fechaISO), tipo: opciones.tipos[0] || 'Ensayo', lugar: opciones.lugares[0] || '' })
@@ -179,7 +202,7 @@ export default function Calendario() {
       <PageHeader
         titulo="Calendario"
         icono="📅"
-        subtitulo={`${eventosDelMes.length} convocatoria(s) en ${MESES[mes]}`}
+        subtitulo={`${eventosDelMes.length} evento(s) en ${MESES[mes]} · convocatorias, ensayos y procesiones`}
       >
         {puedeEditar && (
           <button onClick={() => setModalOpciones(true)} className="btn-ghost text-xs">
@@ -195,7 +218,7 @@ export default function Calendario() {
         <button
           onClick={() => pdfCalendarioListado(
             [...eventosDelMes].sort((a, b) => a.fecha_iso.localeCompare(b.fecha_iso)),
-            `Convocatorias de ${MESES[mes]}`
+            `Calendario de ${MESES[mes]}`
           )}
           className="btn-ghost text-xs"
         >
@@ -220,7 +243,7 @@ export default function Calendario() {
         </div>
 
         <div className="flex items-center gap-3 text-xs text-slate-500">
-          {opciones.tipos.slice(0, 4).map((t) => (
+          {[...opciones.tipos.slice(0, 4), TIPO_PROCESION].map((t) => (
             <span key={t} className="flex items-center gap-1.5">
               <span className={`w-2.5 h-2.5 rounded-full ${estiloTipo(t).punto}`} />
               {t}
@@ -228,6 +251,24 @@ export default function Calendario() {
           ))}
         </div>
       </div>
+
+      {!cargando && procesionesSinFecha.length > 0 && (
+        <div className="mb-4">
+          <Alerta tipo="aviso">
+            {procesionesSinFecha.length === 1 ? 'La procesión ' : 'Las procesiones '}
+            {procesionesSinFecha.map((p, i) => (
+              <span key={p.id}>
+                {i > 0 && (i === procesionesSinFecha.length - 1 ? ' y ' : ', ')}
+                {puedeProcesiones
+                  ? <Link to={`/procesiones/${p.id}`} className="font-semibold underline">{p.nombre}</Link>
+                  : <b>{p.nombre}</b>}
+              </span>
+            ))}
+            {procesionesSinFecha.length === 1 ? ' no tiene fecha' : ' no tienen fecha'} y no
+            sale{procesionesSinFecha.length === 1 ? '' : 'n'} en el calendario. Pónsela en «Editar datos».
+          </Alerta>
+        </div>
+      )}
 
       {/* --- Rejilla --- */}
       {cargando ? (
@@ -276,9 +317,13 @@ export default function Calendario() {
                           <div
                             key={e.id}
                             className={`text-[10px] leading-tight px-1.5 py-1 rounded border ${est.chip} truncate`}
-                            title={`${e.hora} · ${e.tipo} · ${e.lugar}${e.ensayo_id ? ' · con ensayo' : ''}`}
+                            title={[e.hora, tituloEvento(e), e.lugar].filter(Boolean).join(' · ') +
+                              (e.origen === 'cita' && e.ensayo_id ? ' · con ensayo' : '') +
+                              (e.origen === 'ensayo' ? ' · ensayo sin convocatoria' : '')}
                           >
-                            <b>{e.hora}</b> {e.tipo}
+                            {e.hora && <b>{e.hora} </b>}
+                            {e.origen === 'procesion' && '✝️ '}
+                            {tituloEvento(e)}
                             {e.ensayo_id && <span className="ml-0.5">📋</span>}
                           </div>
                         )
@@ -303,6 +348,8 @@ export default function Calendario() {
         eventos={diaDetalle ? porFecha[diaDetalle] || [] : []}
         puedeEditar={puedeEditar}
         puedeEnsayos={puedeEnsayos}
+        puedeProcesiones={puedeProcesiones}
+        onVincular={vincular}
         onCerrar={() => setDiaDetalle(null)}
         onEditar={(e) => { setDiaDetalle(null); setEditando({ ...e }) }}
         onNuevo={(iso) => { setDiaDetalle(null); abrirNuevo(iso) }}
@@ -339,7 +386,10 @@ export default function Calendario() {
 //  DETALLE DE UN DIA
 // =============================================================
 
-function DetalleDia({ fechaISO, eventos, puedeEditar, puedeEnsayos, onCerrar, onEditar, onNuevo }) {
+function DetalleDia({
+  fechaISO, eventos, puedeEditar, puedeEnsayos, puedeProcesiones,
+  onCerrar, onEditar, onNuevo, onVincular,
+}) {
   if (!fechaISO) return null
 
   return (
@@ -358,8 +408,29 @@ function DetalleDia({ fechaISO, eventos, puedeEditar, puedeEnsayos, onCerrar, on
                   <span className={`chip ${est.chip} mb-1.5`}>
                     {est.icono} {e.tipo}
                   </span>
-                  <p className="font-serif text-lg font-bold text-morado">{e.hora}</p>
-                  <p className="text-sm text-slate-600">{e.lugar}</p>
+                  {e.origen === 'procesion' && (
+                    <p className="font-serif text-lg font-bold text-morado">{e.titulo}</p>
+                  )}
+                  {e.hora && (
+                    <p className={e.origen === 'procesion'
+                      ? 'text-sm text-slate-700'
+                      : 'font-serif text-lg font-bold text-morado'}
+                    >
+                      {e.origen === 'procesion' ? `Citación: ${e.hora}` : e.hora}
+                    </p>
+                  )}
+                  {e.lugar && <p className="text-sm text-slate-600">{e.lugar}</p>}
+                  {e.origen === 'procesion' && (
+                    <p className="text-xs text-slate-400 mt-1">
+                      {e.publicado ? '🌐 Publicada en la web de costaleros' : 'Sin publicar'}
+                      {' · '}La fecha se cambia en la propia procesión.
+                    </p>
+                  )}
+                  {e.origen === 'ensayo' && (
+                    <p className="text-xs text-amber-700 mt-1">
+                      ⚠️ Este ensayo no tiene convocatoria en el calendario.
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -370,14 +441,24 @@ function DetalleDia({ fechaISO, eventos, puedeEditar, puedeEnsayos, onCerrar, on
               )}
 
               <div className="flex gap-2 flex-wrap">
-                {puedeEditar && (
+                {puedeEditar && e.origen === 'cita' && (
                   <button onClick={() => onEditar(e)} className="btn-ghost text-xs">
                     ✏️ Editar
+                  </button>
+                )}
+                {puedeEditar && puedeEnsayos && e.origen === 'ensayo' && (
+                  <button onClick={() => onVincular(e)} className="btn-ghost text-xs">
+                    📅 Crear su convocatoria
                   </button>
                 )}
                 {puedeEnsayos && e.ensayo_id && (
                   <Link to={`/ensayos/${e.ensayo_id}`} className="btn-oro text-xs">
                     📋 Abrir ensayo
+                  </Link>
+                )}
+                {puedeProcesiones && e.origen === 'procesion' && (
+                  <Link to={`/procesiones/${e.procesion_id}`} className="btn-oro text-xs">
+                    ✝️ Abrir procesión
                   </Link>
                 )}
               </div>

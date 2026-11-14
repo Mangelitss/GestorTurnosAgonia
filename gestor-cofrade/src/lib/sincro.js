@@ -236,6 +236,29 @@ export async function cambiarMotivoYDesvincular(id, datos, ensayoId) {
   await batch.commit()
 }
 
+// Un ensayo que se quedo sin convocatoria: se le crea de nuevo
+// y quedan unidos otra vez.
+export async function vincularEnsayoAlCalendario(ensayo) {
+  const batch = writeBatch(db)
+  const refEvento = doc(collection(db, COL.CALENDARIO))
+
+  batch.set(refEvento, {
+    ...eventoVacio(),
+    ...eventoDesdeEnsayo(ensayo),
+    tipo: TIPO_ENSAYO,
+    ensayo_id: ensayo.id,
+    creado: serverTimestamp(),
+    actualizado: serverTimestamp(),
+  })
+  batch.update(doc(db, COL.ENSAYOS, ensayo.id), {
+    evento_id: refEvento.id,
+    actualizado: serverTimestamp(),
+  })
+
+  await batch.commit()
+  return refEvento.id
+}
+
 // Una convocatoria que NO era ensayo y pasa a serlo: hay que crearle uno
 export async function convertirEnEnsayo(id, datos) {
   const batch = writeBatch(db)

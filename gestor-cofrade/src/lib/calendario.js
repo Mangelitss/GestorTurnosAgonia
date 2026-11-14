@@ -39,7 +39,11 @@ export const ESTILO_TIPO = {
   'Reunión de Costaleros': { icono: '💬', chip: 'bg-sky-100 text-sky-800 border-sky-300', punto: 'bg-sky-500' },
   'Mudá del Trono': { icono: '🛠️', chip: 'bg-amber-100 text-amber-800 border-amber-300', punto: 'bg-amber-500' },
   'Misa de Hermandad': { icono: '⛪', chip: 'bg-morado/10 text-morado border-morado/30', punto: 'bg-morado' },
+  'Procesión': { icono: '✝️', chip: 'bg-rose-100 text-rose-800 border-rose-300', punto: 'bg-rose-600' },
 }
+
+// Motivo con el que salen las procesiones en el calendario
+export const TIPO_PROCESION = 'Procesión'
 
 export const ESTILO_POR_DEFECTO = {
   icono: '📌',
@@ -151,6 +155,102 @@ export async function actualizarEvento(id, datos) {
 
 export async function borrarEvento(id) {
   await deleteDoc(doc(db, COL.CALENDARIO, id))
+}
+
+// =============================================================
+//  AGENDA COMPLETA
+//  El calendario no solo muestra sus convocatorias: junta TODO lo
+//  que tiene fecha en el panel.
+//
+//   origen 'cita'      -> convocatoria de /calendario (editable aqui)
+//   origen 'ensayo'    -> ensayo SIN convocatoria (se edita en Ensayos)
+//   origen 'procesion' -> procesion con fecha (se edita en Procesiones)
+//
+//  Los ensayos con convocatoria no se repiten: ya salen como su cita.
+//  Las entradas que no son citas llevan  virtual: true  y un id
+//  con prefijo, para que nunca choquen con los de /calendario.
+// =============================================================
+
+async function leerColeccion(nombre) {
+  try {
+    const snap = await getDocs(collection(db, nombre))
+    return snap.docs.map((d) => ({ id: d.id, ...d.data() }))
+  } catch (e) {
+    // Sin permiso para esa coleccion: el calendario sigue con lo demas
+    console.warn(`Calendario: no se ha podido leer ${nombre}`, e)
+    return []
+  }
+}
+
+export async function leerAgenda() {
+  const [eventos, ensayos, procesiones] = await Promise.all([
+    leerEventos(),
+    leerColeccion(COL.ENSAYOS),
+    leerColeccion(COL.PROCESIONES),
+  ])
+  return componerAgenda(eventos, ensayos, procesiones)
+}
+
+export function componerAgenda(eventos, ensayos, procesiones) {
+  const idsEventos = new Set(eventos.map((e) => e.id))
+  const ensayosConCita = new Set(eventos.map((e) => e.ensayo_id).filter(Boolean))
+  const ensayosPorId = new Map(ensayos.map((e) => [e.id, e]))
+
+  const citas = eventos.map((e) => ({
+    ...e,
+    origen: 'cita',
+    ensayo_estado: e.ensayo_id ? ensayosPorId.get(e.ensayo_id)?.estado || null : null,
+  }))
+
+  const sueltos = ensayos
+    .filter((e) => e.fecha_iso && !ensayosConCita.has(e.id) && !idsEventos.has(e.evento_id))
+    .map((e) => ({
+      id: `ensayo:${e.id}`,
+      origen: 'ensayo',
+      virtual: true,
+      ensayo_id: e.id,
+      ensayo_estado: e.estado || null,
+      tipo: 'Ensayo',
+      fecha_iso: e.fecha_iso,
+      hora: e.hora || '',
+      lugar: e.lugar || '',
+      indicaciones: e.notas || '',
+    }))
+
+  const procs = procesiones
+    .filter((p) => p.fecha_iso)
+    .map((p) => {
+      const info = p.info_web || {}
+      return {
+        id: `procesion:${p.id}`,
+        origen: 'procesion',
+        virtual: true,
+        procesion_id: p.id,
+        tipo: TIPO_PROCESION,
+        titulo: p.nombre || TIPO_PROCESION,
+        fecha_iso: p.fecha_iso,
+        hora: info.citacion_hora || info.salida_hora || '',
+        lugar: info.citacion_lugar || '',
+        indicaciones: info.tener_en_cuenta || '',
+        publicado: !!p.publicado,
+      }
+    })
+
+  const sinFecha = procesiones
+    .filter((p) => !p.fecha_iso)
+    .map((p) => ({ id: p.id, nombre: p.nombre || 'Procesión sin nombre' }))
+
+  const todo = [...citas, ...sueltos, ...procs].sort((a, b) =>
+    (a.fecha_iso || '').localeCompare(b.fecha_iso || '') ||
+    (a.hora || '').localeCompare(b.hora || '')
+  )
+
+  return { eventos: todo, procesionesSinFecha: sinFecha }
+}
+
+// Texto principal de una entrada de la agenda
+export function tituloEvento(e) {
+  return e?.titulo || e?.tipo || e?.motivo || ''
 }
 
 // Agrupa los eventos por fecha ISO para pintar la rejilla
