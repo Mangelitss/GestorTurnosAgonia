@@ -1,0 +1,971 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Recorrido Procesional 3D</title>
+
+<!-- MapLibre GL JS (sin API key) -->
+<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+
+<!-- Tipografías: Cinzel (títulos cofrades), Cormorant (texto), Inter (interfaz) -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --oro: #e2b84f;
+    --oro-claro: #f6dc8f;
+    --oro-osc: #8a6420;
+    --morado: #7b3fa8;
+    --morado-osc: #2a0f3d;
+    --tinta: #f4ead2;
+    --panel: rgba(20, 10, 28, 0.72);
+    --borde: rgba(226, 184, 79, 0.28);
+    --fondo: #050307;
+    --card-bottom: 112px;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: var(--fondo); color: var(--tinta);
+    font-family: "Inter", system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  button, select { font: inherit; color: inherit; }
+
+  /* ---------- Escenario (marco de grabación) ---------- */
+  #viewport { position: fixed; inset: 0; display: grid; place-items: center; background:
+    radial-gradient(ellipse at center, #120a18 0%, var(--fondo) 70%); }
+  #stage { position: relative; width: 100vw; height: 100vh; overflow: hidden; background: #0d0a12; }
+  #stage.enmarcado { box-shadow: 0 0 0 1px rgba(226,184,79,.35), 0 30px 80px rgba(0,0,0,.7); }
+  body.modo-video #stage.enmarcado { box-shadow: none; }
+  #map { position: absolute; inset: 0; }
+  .viñeta { position: absolute; inset: 0; pointer-events: none;
+    background:
+      linear-gradient(to bottom, rgba(8,4,12,.65) 0%, transparent 22%, transparent 70%, rgba(8,4,12,.55) 100%),
+      radial-gradient(ellipse at 50% 55%, transparent 50%, rgba(0,0,0,.55) 100%); }
+
+  /* ---------- Cabecera ---------- */
+  #cabecera { position: absolute; top: 22px; left: 26px; pointer-events: none; text-shadow: 0 2px 12px rgba(0,0,0,.8); }
+  #cabecera .sub { font: 600 11px/1 "Inter", sans-serif; letter-spacing: .32em; text-transform: uppercase; color: var(--oro); }
+  #cabecera h1 { margin: 8px 0 0; font: 600 26px/1.1 "Cinzel", serif; letter-spacing: .06em; color: var(--tinta); }
+  #cabecera .filete { width: 120px; height: 1px; margin-top: 10px; background: linear-gradient(90deg, var(--oro), transparent); }
+  #stage.vertical #cabecera { left: 0; right: 0; text-align: center; top: 28px; }
+  #stage.vertical #cabecera .filete { margin: 10px auto 0; background: linear-gradient(90deg, transparent, var(--oro), transparent); }
+
+  /* ---------- Tarjeta de parada ---------- */
+  .card { position: absolute; left: 26px; bottom: var(--card-bottom); width: min(410px, calc(100% - 52px));
+    background: linear-gradient(160deg, rgba(44,16,62,.94), rgba(16,8,24,.95));
+    border: 1px solid var(--oro); border-radius: 3px; color: var(--tinta);
+    box-shadow: 0 0 0 4px rgba(16,8,24,.65), 0 0 0 5px rgba(226,184,79,.35), 0 24px 60px rgba(0,0,0,.65), 0 0 50px rgba(226,184,79,.12);
+    opacity: 0; transform: translateY(26px) scale(.97); filter: blur(5px);
+    transition: opacity .7s ease, transform .9s cubic-bezier(.2,.8,.2,1), filter .7s ease; pointer-events: none; overflow: hidden; }
+  .card.visible { opacity: 1; transform: none; filter: none; }
+  .card .esq { position: absolute; width: 9px; height: 9px; border: 1px solid var(--oro); transform: rotate(45deg); background: var(--morado-osc); z-index: 2; }
+  .card .esq.a { top: -5px; left: -5px; } .card .esq.b { top: -5px; right: -5px; }
+  .card .esq.c { bottom: -5px; left: -5px; } .card .esq.d { bottom: -5px; right: -5px; }
+  .card-img { height: 150px; background: #000 center/cover no-repeat; border-bottom: 1px solid var(--borde); }
+  .card-img[hidden] { display: none; }
+  .card-body { padding: 18px 22px 20px; }
+  .kicker { margin: 0; font: 600 10.5px/1 "Inter", sans-serif; letter-spacing: .28em; text-transform: uppercase; color: var(--oro); }
+  .card h2 { margin: 10px 0 0; font: 600 23px/1.18 "Cinzel", serif; letter-spacing: .03em; color: #fff6dd; }
+  .hora { display: inline-flex; align-items: center; gap: 7px; margin-top: 10px; font: 500 13px/1 "Inter", sans-serif; color: var(--oro-claro); }
+  .hora svg { width: 14px; height: 14px; }
+  .hora[hidden] { display: none; }
+  .ornamento { display: flex; align-items: center; gap: 10px; margin: 14px 0 12px; color: var(--oro); font-size: 12px; }
+  .ornamento::before, .ornamento::after { content: ""; flex: 1; height: 1px; background: linear-gradient(90deg, transparent, var(--oro), transparent); }
+  .desc { margin: 0; font: 500 17px/1.42 "Cormorant Garamond", serif; color: #eadfc4; }
+  .temporizador { height: 2px; background: rgba(226,184,79,.15); }
+  .temporizador span { display: block; height: 100%; background: linear-gradient(90deg, var(--morado), var(--oro)); transform-origin: left; }
+  #stage.vertical .card { left: 18px; right: 18px; width: auto; }
+  body.modo-video { --card-bottom: 42px; }
+  #stage.vertical { --card-bottom: 132px; }
+  body.modo-video #stage.vertical { --card-bottom: 70px; }
+
+  /* ---------- Marcador del paso ---------- */
+  .paso { position: relative; width: var(--tam, 96px); pointer-events: none; }
+  .paso .sombra { position: absolute; left: 6%; right: 6%; bottom: -7px; height: 16px; border-radius: 50%;
+    background: radial-gradient(ellipse at center, rgba(255,196,90,.55), rgba(255,160,60,.18) 45%, transparent 70%); filter: blur(2px); }
+  .paso .luz { position: absolute; left: -60%; right: -60%; bottom: -30px; height: 70px; border-radius: 50%;
+    background: radial-gradient(ellipse at center, rgba(255,200,110,.28), transparent 65%); }
+  .paso .mece { position: relative; transform-origin: 50% 100%; filter: drop-shadow(0 6px 10px rgba(0,0,0,.6)) drop-shadow(0 0 14px rgba(255,200,100,.35)); }
+  .paso .mece > * { display: block; width: 100%; height: auto; }
+  .paso.andando .mece { animation: mecida var(--mecida, 1.7s) ease-in-out infinite alternate; }
+  .paso.levanta .mece { animation: levanta .75s cubic-bezier(.3,1.6,.5,1); }
+  @keyframes mecida {
+    0% { transform: rotate(-1.8deg) translateY(0); }
+    50% { transform: rotate(0deg) translateY(-2.5px); }
+    100% { transform: rotate(1.8deg) translateY(0); }
+  }
+  @keyframes levanta { 0% { transform: translateY(0); } 35% { transform: translateY(-9px); } 100% { transform: translateY(0); } }
+  .llama { transform-box: fill-box; transform-origin: 50% 100%; animation: parpadeo .9s ease-in-out infinite alternate; }
+  @keyframes parpadeo { 0% { transform: scale(1, 1); opacity: .95; } 40% { transform: scale(.92, 1.08); } 100% { transform: scale(1.06, .9); opacity: 1; } }
+
+  /* ---------- Marcas de paradas en el mapa ---------- */
+  .pin { width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center;
+    border: 1.5px solid var(--oro); background: rgba(30,10,42,.88); color: var(--oro);
+    font: 600 11px/1 "Inter", sans-serif; box-shadow: 0 0 14px rgba(226,184,79,.45); transition: background .5s, color .5s; }
+  .pin.visitada { background: var(--oro); color: var(--morado-osc); }
+  .pin.activa::after { content: ""; position: absolute; inset: -2px; border-radius: 50%; border: 2px solid var(--oro); animation: pulso 1.6s ease-out infinite; }
+  @keyframes pulso { from { transform: scale(1); opacity: .9; } to { transform: scale(2.6); opacity: 0; } }
+
+  /* ---------- Interfaz ---------- */
+  .ui { transition: opacity .4s ease; }
+  body.modo-video .ui { opacity: 0 !important; pointer-events: none !important; }
+  body.modo-video #stage { cursor: none; }
+  body.modo-video #stage * { cursor: none !important; }
+
+  #barra { position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); z-index: 10;
+    width: min(880px, calc(100vw - 32px)); display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    padding: 10px 12px; border-radius: 16px; background: var(--panel); border: 1px solid var(--borde);
+    backdrop-filter: blur(14px) saturate(140%); -webkit-backdrop-filter: blur(14px) saturate(140%);
+    box-shadow: 0 12px 40px rgba(0,0,0,.45); }
+  .ic { width: 38px; height: 38px; flex: none; display: grid; place-items: center; border-radius: 10px; border: 1px solid transparent;
+    background: rgba(255,255,255,.06); cursor: pointer; transition: background .2s, border-color .2s, transform .15s; }
+  .ic:hover { background: rgba(226,184,79,.16); border-color: var(--borde); }
+  .ic:active { transform: scale(.94); }
+  .ic svg { width: 18px; height: 18px; fill: currentColor; }
+  .ic.principal { width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(145deg, var(--oro-claro), var(--oro) 55%, var(--oro-osc)); color: #2a0f3d; }
+  .ic.principal:hover { filter: brightness(1.08); }
+  .progreso { flex: 1 1 220px; display: flex; align-items: center; gap: 12px; min-width: 180px; }
+  .pista { position: relative; flex: 1; height: 26px; cursor: pointer; touch-action: none; }
+  .pista .base, .pista .relleno { position: absolute; left: 0; top: 50%; height: 4px; margin-top: -2px; border-radius: 4px; }
+  .pista .base { right: 0; background: rgba(255,255,255,.14); }
+  .pista .relleno { width: 0; background: linear-gradient(90deg, var(--morado), var(--oro)); box-shadow: 0 0 10px rgba(226,184,79,.5); }
+  .pista .marca { position: absolute; top: 50%; width: 8px; height: 8px; margin: -4px 0 0 -4px; transform: rotate(45deg);
+    background: var(--morado-osc); border: 1px solid var(--oro); }
+  .pista .marca.pasada { background: var(--oro); }
+  .pista .tirador { position: absolute; top: 50%; width: 14px; height: 14px; margin: -7px 0 0 -7px; border-radius: 50%;
+    background: #fff6dd; box-shadow: 0 0 0 3px rgba(226,184,79,.45), 0 2px 8px rgba(0,0,0,.5); }
+  #etiqueta { font: 500 12px/1 "Inter", sans-serif; color: #d9cdb2; white-space: nowrap; font-variant-numeric: tabular-nums; min-width: 88px; text-align: right; }
+  .seg { display: flex; padding: 3px; gap: 2px; border-radius: 10px; background: rgba(255,255,255,.06); }
+  .seg button { border: 0; background: transparent; padding: 7px 10px; border-radius: 7px; cursor: pointer; font-size: 12.5px; font-weight: 600; color: #cbbfa3; }
+  .seg button.on { background: var(--oro); color: var(--morado-osc); }
+  select { height: 38px; padding: 0 10px; border-radius: 10px; border: 1px solid transparent; background: rgba(255,255,255,.06); font-size: 12.5px; cursor: pointer; }
+  select option { background: #1b0f24; }
+  .boton { height: 38px; padding: 0 14px; display: inline-flex; align-items: center; gap: 8px; border-radius: 10px; cursor: pointer;
+    border: 1px solid var(--borde); background: rgba(123,63,168,.28); font-size: 12.5px; font-weight: 600; white-space: nowrap; }
+  .boton:hover { background: rgba(123,63,168,.45); }
+  .boton .punto { width: 8px; height: 8px; border-radius: 50%; background: #ff4b4b; box-shadow: 0 0 8px #ff4b4b; }
+  kbd { font: 600 10px/1 "Inter", sans-serif; padding: 3px 5px; border-radius: 4px; border: 1px solid rgba(255,255,255,.25); color: #d9cdb2; }
+
+  #btn-coords { position: fixed; top: 16px; right: 16px; z-index: 10; height: 34px; padding: 0 12px; border-radius: 10px; cursor: pointer;
+    background: rgba(20,10,28,.55); border: 1px solid rgba(255,255,255,.12); font-size: 12px; color: #cbbfa3;
+    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+  #btn-coords:hover { color: var(--tinta); border-color: var(--borde); }
+  body.constructor #btn-coords { display: none; }
+
+  #intro { position: fixed; inset: 0; z-index: 5; display: grid; place-items: center; pointer-events: none; }
+  #intro button { pointer-events: auto; display: flex; align-items: center; gap: 12px; padding: 16px 26px 16px 18px; border-radius: 999px; cursor: pointer;
+    border: 1px solid var(--oro); background: rgba(24,10,34,.78); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    font: 600 15px/1 "Cinzel", serif; letter-spacing: .08em; color: var(--tinta); box-shadow: 0 0 40px rgba(226,184,79,.25); }
+  #intro button span.c { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; background: var(--oro); color: var(--morado-osc); }
+  #intro button svg { width: 16px; height: 16px; fill: currentColor; margin-left: 2px; }
+  #intro.oculto { opacity: 0; } #intro.oculto button { pointer-events: none; }
+
+  /* Panel del constructor de ruta */
+  #constructor { position: fixed; top: 16px; right: 16px; z-index: 11; width: min(330px, calc(100vw - 32px)); padding: 16px;
+    border-radius: 14px; background: rgba(14,8,20,.9); border: 1px solid rgba(127,227,255,.35); box-shadow: 0 16px 40px rgba(0,0,0,.5);
+    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); display: none; }
+  body.constructor #constructor { display: block; }
+  #constructor h3 { margin: 0; font: 600 14px/1.2 "Inter", sans-serif; color: #9fe9ff; display: flex; justify-content: space-between; align-items: center; }
+  #constructor h3 button { border: 0; background: none; cursor: pointer; font-size: 18px; color: #cbbfa3; }
+  #constructor p { margin: 8px 0 10px; font-size: 12.5px; line-height: 1.45; color: #cfc6b5; }
+  #constructor textarea { width: 100%; height: 130px; resize: vertical; border-radius: 8px; border: 1px solid rgba(255,255,255,.12);
+    background: rgba(0,0,0,.35); color: #e9f9ff; font: 11.5px/1.4 ui-monospace, Consolas, monospace; padding: 8px; }
+  #constructor .fila { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
+  #constructor .fila button { flex: 1; height: 32px; border-radius: 8px; cursor: pointer; border: 1px solid rgba(255,255,255,.14); background: rgba(255,255,255,.07); font-size: 12px; }
+  #constructor .fila button:hover { background: rgba(127,227,255,.16); }
+  #constructor .cuenta { font-size: 12px; color: #9fe9ff; }
+  body.constructor .maplibregl-canvas-container.maplibregl-interactive,
+  body.constructor .maplibregl-canvas-container.maplibregl-interactive:active { cursor: crosshair; }
+
+  #aviso { position: fixed; top: 22px; left: 50%; z-index: 20; transform: translate(-50%, -10px); padding: 10px 16px; border-radius: 10px;
+    background: rgba(14,8,20,.9); border: 1px solid var(--borde); font-size: 13px; opacity: 0; pointer-events: none; transition: opacity .3s, transform .3s; }
+  #aviso.visible { opacity: 1; transform: translate(-50%, 0); }
+
+  #error { position: fixed; inset: 0; display: none; place-items: center; text-align: center; padding: 24px; z-index: 30; background: var(--fondo); }
+
+  .maplibregl-ctrl-attrib { opacity: .55; font-size: 10px; }
+  .maplibregl-ctrl-attrib.maplibregl-compact { background: rgba(20,10,28,.6); }
+
+  @media (max-width: 640px) {
+    #cabecera h1 { font-size: 20px; }
+    #barra { gap: 8px; }
+    .progreso { order: -1; flex-basis: 100%; }
+    .boton .txt-largo { display: none; }
+    :root { --card-bottom: 150px; }
+  }
+</style>
+</head>
+<body>
+
+<div id="viewport">
+  <div id="stage">
+    <div id="map"></div>
+    <div class="viñeta"></div>
+
+    <header id="cabecera">
+      <div class="sub" id="cab-sub"></div>
+      <h1 id="cab-titulo"></h1>
+      <div class="filete"></div>
+    </header>
+
+    <article class="card" id="card" aria-live="polite">
+      <span class="esq a"></span><span class="esq b"></span><span class="esq c"></span><span class="esq d"></span>
+      <div class="card-img" id="card-img" hidden></div>
+      <div class="card-body">
+        <p class="kicker" id="card-kicker"></p>
+        <h2 id="card-titulo"></h2>
+        <div class="hora" id="card-hora">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+          <span id="card-hora-txt"></span>
+        </div>
+        <div class="ornamento">✠</div>
+        <p class="desc" id="card-desc"></p>
+      </div>
+      <div class="temporizador"><span id="card-timer"></span></div>
+    </article>
+  </div>
+</div>
+
+<div id="intro" class="ui">
+  <button id="btn-intro"><span class="c"><svg viewBox="0 0 24 24"><path d="M7 4.5v15l13-7.5z"/></svg></span>Iniciar recorrido</button>
+</div>
+
+<button id="btn-coords" class="ui" title="Haz clic en el mapa para trazar una ruta y copiar sus coordenadas">⌖ Modo Sacar Coordenadas</button>
+
+<div id="constructor" class="ui">
+  <h3>⌖ Modo Sacar Coordenadas <button id="c-cerrar" title="Salir">×</button></h3>
+  <p>Haz clic sobre las calles siguiendo el orden del recorrido. Cada clic copia al portapapeles el array <code>[longitud, latitud]</code> listo para pegar en <code>RECORRIDO</code>. <kbd>Ctrl</kbd>+<kbd>Z</kbd> deshace.</p>
+  <div class="cuenta" id="c-cuenta">0 puntos</div>
+  <textarea id="c-salida" readonly spellcheck="false" placeholder="[ ]"></textarea>
+  <div class="fila">
+    <button id="c-deshacer">↶ Deshacer</button>
+    <button id="c-copiar">⧉ Copiar</button>
+    <button id="c-limpiar">✕ Limpiar</button>
+  </div>
+</div>
+
+<div id="barra" class="ui">
+  <button class="ic principal" id="btn-play" title="Reproducir / Pausa (Espacio)"></button>
+  <button class="ic" id="btn-reset" title="Reiniciar recorrido (R)">
+    <svg viewBox="0 0 24 24"><path d="M12 5V2L7 6l5 4V7a6 6 0 1 1-6 6H4a8 8 0 1 0 8-8z"/></svg>
+  </button>
+  <div class="progreso">
+    <div class="pista" id="pista">
+      <div class="base"></div><div class="relleno" id="relleno"></div>
+      <div id="marcas"></div>
+      <div class="tirador" id="tirador"></div>
+    </div>
+    <span id="etiqueta">0,00 km</span>
+  </div>
+  <div class="seg" id="velocidad" title="Velocidad (1, 2, 4)">
+    <button data-v="1" class="on">1x</button><button data-v="2">2x</button><button data-v="4">4x</button>
+  </div>
+  <select id="aspecto" title="Encuadre de grabación">
+    <option value="full">Pantalla completa</option>
+    <option value="16:9">16:9 YouTube</option>
+    <option value="9:16">9:16 TikTok/Reels</option>
+  </select>
+  <button class="ic" id="btn-fs" title="Pantalla completa del navegador (F)">
+    <svg viewBox="0 0 24 24"><path d="M4 9V4h5v2H6v3H4zm10-5h6v5h-2V6h-4V4zM4 15h2v3h3v2H4v-5zm14 3v-3h2v5h-6v-2h4z"/></svg>
+  </button>
+  <button class="boton" id="btn-video" title="Oculta la interfaz para grabar (H)"><span class="punto"></span><span class="txt-largo">Modo Vídeo</span> <kbd>H</kbd></button>
+</div>
+
+<div id="aviso"></div>
+<div id="error"><div><h2 style="font-family:Cinzel,serif;color:#e2b84f">No se pudo cargar el mapa</h2><p>Comprueba la conexión a Internet: el mapa y la librería se cargan desde CDN gratuitos.</p></div></div>
+
+<script>
+/* ╔══════════════════════════════════════════════════════════════════════╗
+   ║  1) TU ICONO DEL PASO                                                ║
+   ║  Deja "" para usar el paso dibujado en SVG incluido.                 ║
+   ║  O pon la ruta a tu imagen transparente (.png / .svg), p. ej.:       ║
+   ║     const PASO_ICON_URL = "mi-paso.png";   (en la misma carpeta)     ║
+   ║     const PASO_ICON_URL = "https://.../paso.svg";                    ║
+   ╚══════════════════════════════════════════════════════════════════════╝ */
+const PASO_ICON_URL = "";
+
+
+/* ╔══════════════════════════════════════════════════════════════════════╗
+   ║  2) AJUSTES GENERALES                                                ║
+   ╚══════════════════════════════════════════════════════════════════════╝ */
+const CONFIG = {
+  titulo:    "Recorrido Procesional",     // "" para ocultar la cabecera
+  subtitulo: "Semana Santa · Orihuela",
+
+  // Estilos gratuitos de OpenFreeMap: "dark", "liberty", "positron", "bright", "fiord"
+  estiloMapa: "https://tiles.openfreemap.org/styles/dark",
+
+  velocidadBase: 18,        // metros de recorrido por segundo a velocidad 1x
+  frenadaMetros: 35,        // distancia en la que el paso frena y arranca en cada parada
+  pausaPorDefecto: 4,       // segundos de parada si una parada no indica "pausa"
+  pausasSegunVelocidad: false, // true = a 2x/4x las pausas también se acortan
+  tamanoIcono: 96,          // ancho del paso en píxeles
+  ocultarPuntosInteres: true, // limpia el mapa de iconos de tiendas, bares, etc.
+  mostrarRutaPendiente: true, // traza tenue del recorrido aún no andado
+
+  camara: {
+    zoom: 17.3,             // zoom mientras el paso anda
+    pitch: 60,              // inclinación (perspectiva 3D)
+    zoomParada: 18.3,       // acercamiento en las paradas
+    pitchParada: 55,
+    giroOrbital: 6,         // grados por segundo de órbita en las paradas
+    adelanto: 14,           // metros por delante del paso a los que mira la cámara
+    suavizadoPosicion: 3.2, // mayor = cámara más pegada al paso
+    suavizadoGiro: 1.6,     // mayor = gira antes en las esquinas
+    suavizadoZoom: 1.3,
+  },
+
+  colores: { oro: "#f2c75c", oroBlanco: "#fff3c4", morado: "#7b3fa8" },
+};
+
+
+/* ╔══════════════════════════════════════════════════════════════════════╗
+   ║  3) RECORRIDO Y PARADAS                                              ║
+   ║                                                                      ║
+   ║  Lista ordenada de puntos [longitud, latitud] por los que pasa el    ║
+   ║  paso. Puedes pegar aquí directamente lo que copia el botón          ║
+   ║  "Modo Sacar Coordenadas".                                           ║
+   ║                                                                      ║
+   ║  Para convertir un punto en PARADA, cámbialo por un objeto:          ║
+   ║    { coord: [lon, lat], parada: {                                    ║
+   ║        nombre: "Nombre visible en la tarjeta",                       ║
+   ║        tipo: "salida" | "carrera" | "interes" | "recogida" | "parada",║
+   ║        hora: "21:30",            // hora aproximada ("" la oculta)   ║
+   ║        pausa: 4,                 // segundos detenido                ║
+   ║        descripcion: "Texto breve",                                   ║
+   ║        imagen: ""                // URL o archivo .jpg opcional      ║
+   ║    } }                                                               ║
+   ║                                                                      ║
+   ║  Datos de ejemplo: ruta real por el casco histórico de Orihuela      ║
+   ║  (horas y textos orientativos, sustitúyelos por los de tu cofradía). ║
+   ╚══════════════════════════════════════════════════════════════════════╝ */
+const RECORRIDO = [
+  // ─── PARADA · SALIDA ───
+  { coord: [-0.949498, 38.085237], parada: {
+      nombre: "Salida · Iglesia de las Santas Justa y Rufina",
+      tipo: "salida",
+      hora: "20:00",
+      pausa: 5,
+      descripcion: "Se abren las puertas del templo gótico de las Santas Justa y Rufina. Suena el llamador, los costaleros levantan el paso al cielo y comienza la estación de penitencia.",
+      imagen: "",
+  } },
+  [-0.949311, 38.085244], [-0.949316, 38.085396], [-0.949050, 38.085395],
+  [-0.949082, 38.085417], [-0.948992, 38.085458], [-0.948828, 38.085533],
+  [-0.948772, 38.085554], [-0.948690, 38.085582], [-0.948551, 38.085604],
+  [-0.948478, 38.085614], [-0.948410, 38.085624], [-0.948296, 38.085633],
+  [-0.948250, 38.085633], [-0.948167, 38.085639], [-0.948113, 38.085645],
+  [-0.948079, 38.085648], [-0.947513, 38.085610], [-0.946911, 38.085721],
+  [-0.946738, 38.085770], [-0.946669, 38.085789], [-0.946597, 38.085809],
+  [-0.946470, 38.085845], [-0.946320, 38.085890], [-0.946094, 38.085958],
+  // ─── PARADA · PUNTO DE INTERÉS ───
+  { coord: [-0.946057, 38.085973], parada: {
+      nombre: "Santa Iglesia Catedral",
+      tipo: "interes",
+      hora: "20:35",
+      pausa: 5,
+      descripcion: "El paso se detiene junto a la Catedral del Salvador y Santa María. Silencio en la calle mientras se eleva una saeta desde un balcón.",
+      imagen: "",
+  } },
+  [-0.945746, 38.086097], [-0.945615, 38.086152], [-0.945543, 38.085986],
+  [-0.945464, 38.085896], [-0.945449, 38.085906], [-0.945337, 38.085978],
+  [-0.945238, 38.086034], [-0.945178, 38.086023], [-0.945078, 38.085946],
+  [-0.945055, 38.085955], [-0.944988, 38.085914], [-0.944927, 38.085881],
+  [-0.944897, 38.085863], [-0.944557, 38.085854], [-0.944476, 38.085864],
+  [-0.944387, 38.085860], [-0.944277, 38.085854], [-0.944022, 38.085848],
+  [-0.944019, 38.085932], [-0.944013, 38.085964], [-0.944003, 38.086021],
+  [-0.943996, 38.086083], [-0.944004, 38.086121], [-0.944025, 38.086195],
+  [-0.944060, 38.086200],
+  // ─── PARADA · PUNTO DE INTERÉS ───
+  { coord: [-0.944138, 38.086178], parada: {
+      nombre: "Museo de la Semana Santa",
+      tipo: "interes",
+      hora: "21:00",
+      pausa: 4,
+      descripcion: "Frente al museo de la Plaza de la Merced, que custodia buena parte del patrimonio procesional oriolano.",
+      imagen: "",
+  } },
+  [-0.944060, 38.086200], [-0.944025, 38.086195], [-0.944004, 38.086121],
+  [-0.943996, 38.086083], [-0.944003, 38.086021], [-0.944013, 38.085964],
+  [-0.944019, 38.085932], [-0.944021, 38.085863], [-0.944025, 38.085802],
+  [-0.944418, 38.085810], [-0.944439, 38.085748], [-0.944540, 38.085400],
+  // ─── PARADA · CARRERA OFICIAL ───
+  { coord: [-0.944569, 38.085310], parada: {
+      nombre: "Carrera Oficial · Calle Loaces",
+      tipo: "carrera",
+      hora: "21:20",
+      pausa: 6,
+      descripcion: "Entre tribunas y palcos, la banda acomete una marcha y el paso avanza con la mecida más lucida de la noche.",
+      imagen: "",
+  } },
+  [-0.944595, 38.085229], [-0.944668, 38.085246], [-0.944960, 38.085299],
+  [-0.945035, 38.085398], [-0.945404, 38.085197], [-0.945827, 38.085396],
+  [-0.946950, 38.085222], [-0.947988, 38.085042], [-0.948027, 38.085036],
+  // ─── PARADA · PUNTO DE INTERÉS ───
+  { coord: [-0.948006, 38.084951], parada: {
+      nombre: "Puente de Poniente",
+      tipo: "interes",
+      hora: "21:50",
+      pausa: 4,
+      descripcion: "El cortejo cruza el río Segura: las velas de la candelería se reflejan en el agua.",
+      imagen: "",
+  } },
+  [-0.948027, 38.085036], [-0.948059, 38.085026], [-0.948071, 38.085077],
+  [-0.948076, 38.085118], [-0.948098, 38.085205], [-0.948136, 38.085237],
+  [-0.948200, 38.085235], [-0.948334, 38.085220], [-0.948423, 38.085212],
+  [-0.948449, 38.085223], [-0.948471, 38.085267], [-0.948499, 38.085268],
+  [-0.948940, 38.085321], [-0.948992, 38.085356], [-0.949050, 38.085395],
+  [-0.949082, 38.085417], [-0.949766, 38.085487], [-0.949950, 38.085527],
+  [-0.949984, 38.085550], [-0.950005, 38.085578], [-0.950014, 38.085603],
+  [-0.950038, 38.085672], [-0.950004, 38.085798], [-0.949982, 38.085963],
+  [-0.949973, 38.086016], [-0.949947, 38.086180], [-0.949942, 38.086247],
+  [-0.949946, 38.086464], [-0.949958, 38.086511], [-0.950103, 38.086847],
+  [-0.950119, 38.086879], [-0.950222, 38.087092], [-0.950301, 38.087277],
+  [-0.950328, 38.087470],
+  // ─── PARADA · RECOGIDA ───
+  { coord: [-0.950330, 38.087489], parada: {
+      nombre: "Recogida · Iglesia de Santiago el Mayor",
+      tipo: "recogida",
+      hora: "22:45",
+      pausa: 6,
+      descripcion: "El paso regresa a su templo en la Plaza de Santiago. Último toque de llamador, aplausos y la levantá final ante los fieles.",
+      imagen: "",
+  } },
+];
+
+
+/* ════════════════════════════════════════════════════════════════════════
+   A partir de aquí no hace falta tocar nada.
+   ════════════════════════════════════════════════════════════════════════ */
+
+const TIPOS = { salida: "Salida", carrera: "Carrera Oficial", interes: "Punto de interés", recogida: "Recogida", parada: "Parada" };
+const $ = (id) => document.getElementById(id);
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const lerp = (a, b, t) => a + (b - a) * t;
+const suave = (x) => { x = clamp(x, 0, 1); return x * x * (3 - 2 * x); };
+
+if (!window.maplibregl) { $("error").style.display = "grid"; throw new Error("MapLibre no disponible"); }
+
+/* ---------- Preparación geométrica del recorrido ---------- */
+const PUNTOS = RECORRIDO.map((p, i) => {
+  if (Array.isArray(p)) return { coord: p };
+  if (p && Array.isArray(p.coord)) return p;
+  throw new Error("El punto " + i + " de RECORRIDO no tiene formato válido");
+});
+if (PUNTOS.length < 2) throw new Error("RECORRIDO necesita al menos 2 puntos");
+const COORDS = PUNTOS.map((p) => p.coord);
+const ORIGEN = COORDS[0];
+const MX = 111320 * Math.cos(ORIGEN[1] * Math.PI / 180), MY = 110540; // metros por grado (aprox. local)
+const XY = COORDS.map((c) => [(c[0] - ORIGEN[0]) * MX, (c[1] - ORIGEN[1]) * MY]);
+const DIST = [0];
+for (let i = 1; i < XY.length; i++) DIST.push(DIST[i - 1] + Math.hypot(XY[i][0] - XY[i - 1][0], XY[i][1] - XY[i - 1][1]));
+const LONGITUD = DIST[DIST.length - 1];
+const PARADAS = PUNTOS.map((p, i) => p.parada ? { tipo: "parada", hora: "", descripcion: "", imagen: "", ...p.parada, indice: i, d: DIST[i], coord: p.coord } : null).filter(Boolean);
+const LIMITES = COORDS.reduce((b, c) => [[Math.min(b[0][0], c[0]), Math.min(b[0][1], c[1])], [Math.max(b[1][0], c[0]), Math.max(b[1][1], c[1])]], [[...ORIGEN], [...ORIGEN]]);
+
+function segmentoEn(d) {
+  let lo = 0, hi = DIST.length - 1;
+  while (hi - lo > 1) { const m = (lo + hi) >> 1; if (DIST[m] <= d) lo = m; else hi = m; }
+  return lo;
+}
+function puntoEn(d) {
+  d = clamp(d, 0, LONGITUD);
+  const i = segmentoEn(d), j = Math.min(i + 1, COORDS.length - 1);
+  const len = DIST[j] - DIST[i], t = len > 0 ? (d - DIST[i]) / len : 0;
+  return { i, lngLat: [lerp(COORDS[i][0], COORDS[j][0], t), lerp(COORDS[i][1], COORDS[j][1], t)], xy: [lerp(XY[i][0], XY[j][0], t), lerp(XY[i][1], XY[j][1], t)] };
+}
+function rumboEn(d) { // dirección de la calle (0 = norte, sentido horario)
+  const a = puntoEn(d - 8).xy, b = puntoEn(d + 26).xy;
+  const dx = b[0] - a[0], dy = b[1] - a[1];
+  return Math.hypot(dx, dy) < 0.5 ? null : Math.atan2(dx, dy) * 180 / Math.PI;
+}
+function lineaHasta(d) {
+  if (d < 0.05) return { type: "FeatureCollection", features: [] };
+  const p = puntoEn(d);
+  const c = COORDS.slice(0, p.i + 1); c.push(p.lngLat);
+  return { type: "Feature", properties: {}, geometry: { type: "LineString", coordinates: c } };
+}
+const anguloHacia = (de, a, k) => de + ((((a - de) % 360) + 540) % 360 - 180) * k;
+
+/* ---------- Icono SVG del paso (incluido por defecto) ---------- */
+function svgPaso() {
+  let semilla = 11; const rnd = () => ((semilla = (semilla * 16807) % 2147483647) / 2147483647);
+  const vela = (x, y, s, retraso) => `
+    <ellipse cx="${x}" cy="${y}" rx="${4.2 * s}" ry="${1.5 * s}" fill="url(#oroV)"/>
+    <rect x="${x - 1.9 * s}" y="${y - 15 * s}" width="${3.8 * s}" height="${15 * s}" rx="${.8 * s}" fill="url(#cera)"/>
+    <circle cx="${x}" cy="${y - 20 * s}" r="${8 * s}" fill="url(#halo)"/>
+    <ellipse class="llama" style="animation-delay:${retraso}s" cx="${x}" cy="${y - 19.5 * s}" rx="${2.3 * s}" ry="${4.8 * s}" fill="url(#llama)"/>`;
+  const candelabro = (cx, base, alto, s) => {
+    const top = base - alto, ya = top + 26 * s;
+    let o = `<rect x="${cx - 1.7 * s}" y="${top}" width="${3.4 * s}" height="${alto}" fill="url(#oroH)"/>`;
+    for (let k = 1; k <= 3; k++) o += `<ellipse cx="${cx}" cy="${top + alto * k / 4 + 4}" rx="${3.6 * s}" ry="${2 * s}" fill="url(#oroV)"/>`;
+    o += `<path d="M${cx} ${ya + 9 * s} Q${cx - 13 * s} ${ya + 9 * s} ${cx - 13 * s} ${ya}" stroke="url(#oroH)" stroke-width="${2.2 * s}" fill="none"/>`;
+    o += `<path d="M${cx} ${ya + 9 * s} Q${cx + 13 * s} ${ya + 9 * s} ${cx + 13 * s} ${ya}" stroke="url(#oroH)" stroke-width="${2.2 * s}" fill="none"/>`;
+    o += vela(cx - 13 * s, ya, s, -rnd()) + vela(cx + 13 * s, ya, s, -rnd()) + vela(cx, top, s, -rnd());
+    return o;
+  };
+  // Monte de claveles rojos al pie de la cruz
+  const flores = [];
+  for (let k = 0; k < 95; k++) {
+    const x = 50 + rnd() * 120, alto = 24 * Math.sin(Math.PI * (x - 50) / 120);
+    const y = 147 - rnd() * alto;
+    flores.push({ x, y, r: 2.6 + rnd() * 2.2, c: ["#c0162f", "#e02443", "#9c0f26", "#d41c3a"][Math.floor(rnd() * 4)] });
+  }
+  flores.sort((a, b) => a.y - b.y);
+  const svgFlores = flores.map((f) => `<circle cx="${f.x.toFixed(1)}" cy="${f.y.toFixed(1)}" r="${f.r.toFixed(1)}" fill="${f.c}" stroke="#5e0815" stroke-width=".6"/>`).join("")
+    + [58, 74, 92, 128, 146, 162].map((x) => `<ellipse cx="${x}" cy="${146 - rnd() * 4}" rx="4" ry="1.6" fill="#2f5a2a" transform="rotate(${rnd() * 60 - 30} ${x} 146)"/>`).join("");
+  // Tallas del canasto
+  let tallas = "";
+  for (let k = 0; k < 8; k++) {
+    const x = 32 + k * 21 + (k >= 4 ? 12 : 0);
+    tallas += `<path d="M${x} 171 c-5 -7 4 -14 9 -8 c3 4 -2 7 -4 4 M${x + 9} 171 c5 -7 -4 -14 -9 -8" stroke="#6e4a12" stroke-width="1.3" fill="none"/>`;
+    tallas += `<circle cx="${x + 4.5}" cy="${158}" r="1.8" fill="#fff1b8"/>`;
+  }
+  // Faldón con ondas y flecos
+  let falda = "M27 184 L193 184 L195 221";
+  for (let x = 195; x > 25; x -= 14) falda += ` Q${x - 7} 226 ${x - 14} 221`;
+  falda += " Z";
+  let flecos = "";
+  for (let x = 28; x <= 192; x += 2.6) flecos += `<line x1="${x.toFixed(1)}" y1="219" x2="${x.toFixed(1)}" y2="${225 + Math.sin(x) * 1.2}" stroke="#e2b84f" stroke-width=".9"/>`;
+  let pliegues = "";
+  for (let x = 40; x < 190; x += 16) pliegues += `<path d="M${x} 186 Q${x + 3} 203 ${x} 220" stroke="#ffffff" stroke-opacity=".09" stroke-width="3" fill="none"/>`;
+  let pies = "";
+  for (let k = 0; k < 7; k++) { const x = 42 + k * 23; pies += `<ellipse cx="${x - 3}" cy="230" rx="3.4" ry="2" fill="#efe7d6" stroke="#4a4038" stroke-width=".6"/><ellipse cx="${x + 4}" cy="231" rx="3.4" ry="2" fill="#efe7d6" stroke="#4a4038" stroke-width=".6"/>`; }
+  let rafaga = "";
+  for (let k = 0; k < 16; k++) { const a = k / 16 * Math.PI * 2, r1 = 24, r2 = k % 2 ? 50 : 62; rafaga += `<line x1="${110 + Math.cos(a) * r1}" y1="${58 + Math.sin(a) * r1}" x2="${110 + Math.cos(a) * r2}" y2="${58 + Math.sin(a) * r2}" stroke="#f6dc8f" stroke-opacity=".5" stroke-width="${k % 2 ? 1 : 1.8}"/>`; }
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 236" aria-label="Paso procesional">
+  <defs>
+    <linearGradient id="oroV" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff1b8"/><stop offset=".35" stop-color="#f2c75c"/><stop offset=".75" stop-color="#b8862b"/><stop offset="1" stop-color="#7a5418"/></linearGradient>
+    <linearGradient id="oroH" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#8a6420"/><stop offset=".5" stop-color="#ffe9a6"/><stop offset="1" stop-color="#8a6420"/></linearGradient>
+    <linearGradient id="madera" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#2b170a"/><stop offset=".5" stop-color="#6a3f1d"/><stop offset="1" stop-color="#2b170a"/></linearGradient>
+    <linearGradient id="terciopelo" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7a35a6"/><stop offset=".55" stop-color="#43145f"/><stop offset="1" stop-color="#250a33"/></linearGradient>
+    <linearGradient id="cera" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#d9ccb0"/><stop offset=".5" stop-color="#fffaf0"/><stop offset="1" stop-color="#cfc0a2"/></linearGradient>
+    <radialGradient id="llama" cx=".5" cy=".7" r=".6"><stop offset="0" stop-color="#fffdf0"/><stop offset=".45" stop-color="#ffd35c"/><stop offset=".85" stop-color="#ff8a1f"/><stop offset="1" stop-color="#ff6a00" stop-opacity="0"/></radialGradient>
+    <radialGradient id="halo"><stop offset="0" stop-color="#ffd780" stop-opacity=".75"/><stop offset="1" stop-color="#ffb347" stop-opacity="0"/></radialGradient>
+    <radialGradient id="resplandor"><stop offset="0" stop-color="#ffe7a3" stop-opacity=".6"/><stop offset=".6" stop-color="#e2b84f" stop-opacity=".15"/><stop offset="1" stop-color="#e2b84f" stop-opacity="0"/></radialGradient>
+  </defs>
+  <!-- Resplandor tras la cruz -->
+  <circle cx="110" cy="58" r="66" fill="url(#resplandor)"/>${rafaga}
+  <!-- Cruz con cantoneras doradas -->
+  <rect x="105" y="12" width="10" height="132" fill="url(#madera)" stroke="#e2b84f" stroke-width=".7"/>
+  <rect x="68" y="42" width="84" height="9" fill="url(#madera)" stroke="#e2b84f" stroke-width=".7"/>
+  <rect x="103" y="7" width="14" height="7" rx="1.5" fill="url(#oroV)"/>
+  <rect x="63" y="40.5" width="7" height="12" rx="1.5" fill="url(#oroV)"/><rect x="150" y="40.5" width="7" height="12" rx="1.5" fill="url(#oroV)"/>
+  <rect x="98" y="22" width="24" height="10" rx="1" fill="#f5ecd2" stroke="#b8862b" stroke-width=".8"/>
+  <text x="110" y="29.6" font-family="Georgia,serif" font-size="7" font-weight="700" text-anchor="middle" fill="#6b1420">INRI</text>
+  <!-- Sudario -->
+  <path d="M71 44 Q110 38 149 44 L149 51 Q110 46 71 51 Z" fill="#f6f1e7"/>
+  <path d="M75 49 C71 66 79 86 89 96 C86 82 90 66 99 51 Z" fill="#f2ece0" stroke="#cbbfa8" stroke-width=".7"/>
+  <path d="M121 49 C135 62 142 86 137 110 C131 96 123 76 116 51 Z" fill="#f2ece0" stroke="#cbbfa8" stroke-width=".7"/>
+  <path d="M80 58 C80 72 84 82 88 90 M126 58 C132 72 135 86 135 100" stroke="#cbbfa8" stroke-width=".8" fill="none"/>
+  <!-- Corona de espinas -->
+  <ellipse cx="110" cy="66" rx="9" ry="4.5" fill="none" stroke="#4a3216" stroke-width="2.2"/>
+  <ellipse cx="110" cy="66" rx="9" ry="4.5" fill="none" stroke="#7b5a2c" stroke-width=".8" stroke-dasharray="1.5 2"/>
+  <!-- Candelabros interiores -->
+  ${candelabro(60, 146, 64, .78)}${candelabro(160, 146, 64, .78)}
+  <!-- Monte de claveles -->
+  ${svgFlores}
+  <!-- Candelabros de esquina -->
+  ${candelabro(28, 148, 92, 1)}${candelabro(192, 148, 92, 1)}
+  <!-- Canasto tallado y dorado -->
+  <rect x="16" y="144" width="188" height="6" rx="1.5" fill="url(#oroH)"/>
+  <path d="M20 150 L200 150 L191 178 L29 178 Z" fill="url(#oroV)" stroke="#6e4a12" stroke-width=".8"/>
+  ${tallas}
+  <ellipse cx="110" cy="164" rx="15" ry="11" fill="#3a1253" stroke="#fff1b8" stroke-width="1.6"/>
+  <path d="M110 157 v14 M104 162 h12" stroke="#f2c75c" stroke-width="2.2" stroke-linecap="round"/>
+  <rect x="27" y="178" width="166" height="6" fill="#5a3a10"/>
+  ${Array.from({ length: 14 }, (_, k) => `<rect x="${32 + k * 11.6}" y="179.5" width="6" height="3" rx="1" fill="#1b0c06"/>`).join("")}
+  <!-- Faldón de terciopelo morado con bordado -->
+  <path d="${falda}" fill="url(#terciopelo)"/>
+  ${pliegues}
+  <path d="M30 210 Q50 203 70 210 T110 210 T150 210 T190 210" stroke="#e2b84f" stroke-width="1.6" fill="none"/>
+  <path d="M30 189 L190 189" stroke="#e2b84f" stroke-width="1" stroke-dasharray="3 2"/>
+  <ellipse cx="110" cy="200" rx="10" ry="7" fill="none" stroke="#e2b84f" stroke-width="1.2"/>
+  ${flecos}
+  <!-- Pies de los costaleros asomando bajo el faldón -->
+  ${pies}
+</svg>`;
+}
+
+/* ---------- Estado ---------- */
+const S = {
+  d: 0, dDibujada: -1,
+  reproduciendo: false, velocidad: 1,
+  estado: "andando",          // "andando" | "parado" | "fin"
+  siguiente: 0,               // índice de la próxima parada
+  paradaActual: null, tParada: 0, durParada: 0,
+  orbitaBase: 0, orbitaSentido: 1,
+  seguir: true, iniciado: false, modoConstructor: false,
+  cam: null, ultimo: null,
+};
+
+/* ---------- Mapa ---------- */
+const map = new maplibregl.Map({
+  container: "map",
+  style: CONFIG.estiloMapa,
+  bounds: LIMITES,
+  fitBoundsOptions: { padding: 80 },
+  pitch: 55, bearing: -18, maxPitch: 75,
+  attributionControl: { compact: true },
+});
+map.on("error", (e) => console.warn("[mapa]", e && e.error ? e.error.message : e));
+
+function personalizarEstilo() {
+  const estilo = map.getStyle();
+  const fuente = Object.keys(estilo.sources).find((k) => estilo.sources[k].type === "vector");
+  // Las capas 3D tienen que ir DESPUÉS de todas las capas planas (calles,
+  // plantas de edificios…): si no, éstas se pintan encima y tapan los tejados.
+  let primeraEtiqueta;
+  estilo.layers.forEach((capa, i) => {
+    if (capa.type === "fill-extrusion") { map.removeLayer(capa.id); return; }
+    if (capa.type === "symbol" && CONFIG.ocultarPuntosInteres && /poi/i.test(capa.id)) map.setLayoutProperty(capa.id, "visibility", "none");
+    if (capa["source-layer"] === "building" && capa.type === "fill") map.setLayoutProperty(capa.id, "visibility", "none");
+  });
+  const capas = map.getStyle().layers;
+  let ultimaPlana = -1;
+  capas.forEach((c, i) => { if (c.type !== "symbol") ultimaPlana = i; });
+  primeraEtiqueta = capas[ultimaPlana + 1] ? capas[ultimaPlana + 1].id : undefined;
+
+  // Edificios en 3D: tonos piedra cálidos, opacos (si son translúcidos se ven las paredes de atrás)
+  if (fuente) {
+    map.addLayer({
+      id: "edificios-3d", type: "fill-extrusion", source: fuente, "source-layer": "building", minzoom: 14,
+      filter: ["!", ["to-boolean", ["get", "hide_3d"]]],
+      paint: {
+        "fill-extrusion-color": ["interpolate", ["linear"], ["coalesce", ["get", "render_height"], 8], 0, "#5e4a3f", 12, "#6e5747", 30, "#7f6753"],
+        "fill-extrusion-height": ["interpolate", ["linear"], ["zoom"], 14, 0, 15.2, ["coalesce", ["get", "render_height"], 8]],
+        "fill-extrusion-base": ["interpolate", ["linear"], ["zoom"], 14, 0, 15.2, ["coalesce", ["get", "render_min_height"], 0]],
+        "fill-extrusion-opacity": 1,
+        "fill-extrusion-vertical-gradient": true,
+      },
+    }, primeraEtiqueta);
+  }
+  try { map.setLight({ anchor: "viewport", color: "#ffe3bf", intensity: 0.5, position: [1.3, 200, 35] }); } catch (e) {}
+  try { map.setSky({ "sky-color": "#1a0f26", "horizon-color": "#3b2340", "fog-color": "#140c1c", "sky-horizon-blend": 0.6, "horizon-fog-blend": 0.6, "fog-ground-blend": 0.25 }); } catch (e) {}
+
+  // Recorrido: traza pendiente + estela luminosa (efecto Trim Paths)
+  map.addSource("ruta-total", { type: "geojson", data: { type: "Feature", properties: {}, geometry: { type: "LineString", coordinates: COORDS } } });
+  map.addSource("ruta-andada", { type: "geojson", lineMetrics: true, data: lineaHasta(0) });
+  const lineas = { "line-join": "round", "line-cap": "round" };
+  const debajo = map.getLayer("edificios-3d") ? "edificios-3d" : primeraEtiqueta; // la estela va por la calle, bajo los edificios
+  if (CONFIG.mostrarRutaPendiente) map.addLayer({ id: "ruta-pendiente", type: "line", source: "ruta-total", layout: lineas,
+    paint: { "line-color": "#d9c7ef", "line-opacity": 0.38, "line-width": ["interpolate", ["linear"], ["zoom"], 14, 1.2, 18, 3], "line-dasharray": [1, 2.2] } }, debajo);
+  map.addLayer({ id: "ruta-aura", type: "line", source: "ruta-andada", layout: lineas,
+    paint: { "line-color": CONFIG.colores.morado, "line-opacity": 0.75, "line-width": ["interpolate", ["linear"], ["zoom"], 14, 10, 18, 34], "line-blur": ["interpolate", ["linear"], ["zoom"], 14, 6, 18, 18] } }, debajo);
+  map.addLayer({ id: "ruta-halo", type: "line", source: "ruta-andada", layout: lineas,
+    paint: { "line-color": CONFIG.colores.oro, "line-opacity": 0.7, "line-width": ["interpolate", ["linear"], ["zoom"], 14, 5, 18, 15], "line-blur": 5 } }, debajo);
+  map.addLayer({ id: "ruta-nucleo", type: "line", source: "ruta-andada", layout: lineas,
+    paint: { "line-width": ["interpolate", ["linear"], ["zoom"], 14, 2.2, 18, 6.5],
+      "line-gradient": ["interpolate", ["linear"], ["line-progress"], 0, CONFIG.colores.morado, 0.55, CONFIG.colores.oro, 1, CONFIG.colores.oroBlanco] } }, debajo);
+
+  // Copia tenue por encima de los edificios: deja intuir la estela cuando un edificio la tapa
+  map.addLayer({ id: "ruta-rayosx", type: "line", source: "ruta-andada", layout: lineas,
+    paint: { "line-color": CONFIG.colores.oro, "line-opacity": 0.28, "line-width": ["interpolate", ["linear"], ["zoom"], 14, 1.5, 18, 4] } }, primeraEtiqueta);
+
+  // Capa del constructor de rutas
+  map.addSource("trazo-constructor", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
+  map.addLayer({ id: "constructor-linea", type: "line", source: "trazo-constructor", filter: ["==", ["geometry-type"], "LineString"],
+    layout: lineas, paint: { "line-color": "#7fe3ff", "line-width": 3, "line-dasharray": [2, 1] } });
+  map.addLayer({ id: "constructor-puntos", type: "circle", source: "trazo-constructor", filter: ["==", ["geometry-type"], "Point"],
+    paint: { "circle-radius": 5, "circle-color": "#0e2a33", "circle-stroke-color": "#7fe3ff", "circle-stroke-width": 2 } });
+}
+
+/* ---------- Marcadores ---------- */
+let marcadorPaso, elPaso;
+const pines = [];
+function crearMarcadores() {
+  elPaso = document.createElement("div");
+  elPaso.className = "paso";
+  elPaso.style.setProperty("--tam", CONFIG.tamanoIcono + "px");
+  const icono = PASO_ICON_URL ? `<img src="${PASO_ICON_URL}" alt="Paso">` : svgPaso();
+  elPaso.innerHTML = `<div class="luz"></div><div class="sombra"></div><div class="mece">${icono}</div>`;
+
+  PARADAS.forEach((p, i) => {
+    const el = document.createElement("div");
+    el.className = "pin"; el.textContent = i + 1; el.title = p.nombre;
+    pines.push(el);
+    new maplibregl.Marker({ element: el, anchor: "center" }).setLngLat(p.coord).addTo(map);
+  });
+  marcadorPaso = new maplibregl.Marker({ element: elPaso, anchor: "bottom", pitchAlignment: "viewport", rotationAlignment: "viewport" })
+    .setLngLat(COORDS[0]).addTo(map);
+
+  const marcas = $("marcas");
+  PARADAS.forEach((p, i) => {
+    const m = document.createElement("div");
+    m.className = "marca"; m.style.left = (p.d / LONGITUD * 100) + "%"; m.title = p.nombre;
+    marcas.appendChild(m);
+  });
+}
+
+/* ---------- Tarjetas ---------- */
+function mostrarTarjeta(i) {
+  const p = PARADAS[i];
+  $("card-kicker").textContent = `${TIPOS[p.tipo] || "Parada"} · ${i + 1} de ${PARADAS.length}`;
+  $("card-titulo").textContent = p.nombre || "";
+  $("card-hora-txt").textContent = p.hora ? p.hora + " h" : "";
+  $("card-hora").hidden = !p.hora;
+  $("card-desc").textContent = p.descripcion || "";
+  const img = $("card-img");
+  if (p.imagen) { img.style.backgroundImage = `url("${p.imagen}")`; img.hidden = false; } else img.hidden = true;
+  $("card-timer").style.transform = "scaleX(1)";
+  $("card").classList.add("visible");
+}
+const ocultarTarjeta = () => $("card").classList.remove("visible");
+
+/* ---------- Motor de animación ---------- */
+function entrarEnParada(i) {
+  S.estado = "parado"; S.paradaActual = i; S.tParada = 0;
+  S.durParada = Math.max(0, Number(PARADAS[i].pausa ?? CONFIG.pausaPorDefecto));
+  S.siguiente = i + 1;
+  S.orbitaBase = S.cam ? S.cam.bearing : map.getBearing();
+  S.orbitaSentido = i % 2 ? -1 : 1;
+  mostrarTarjeta(i);
+}
+function salirDeParada() {
+  const p = PARADAS[S.paradaActual];
+  ocultarTarjeta(); S.paradaActual = null;
+  if (p.d >= LONGITUD - 0.5) { terminar(); return; }
+  S.estado = "andando";
+  elPaso.classList.remove("levanta"); void elPaso.offsetWidth; elPaso.classList.add("levanta"); // ¡Al cielo con él!
+  setTimeout(() => elPaso.classList.remove("levanta"), 800);
+}
+function avanzar(dt) {
+  if (S.estado === "parado") {
+    S.tParada += dt * (CONFIG.pausasSegunVelocidad ? S.velocidad : 1);
+    $("card-timer").style.transform = `scaleX(${S.durParada ? 1 - clamp(S.tParada / S.durParada, 0, 1) : 0})`;
+    if (S.tParada >= S.durParada) salirDeParada();
+    return;
+  }
+  if (S.estado !== "andando") return;
+  const sig = PARADAS[S.siguiente], ant = PARADAS[S.siguiente - 1];
+  const dSig = sig ? sig.d - S.d : LONGITUD - S.d;
+  const dAnt = ant ? S.d - ant.d : S.d;
+  const factor = 0.12 + 0.88 * suave(Math.min(dSig, dAnt) / CONFIG.frenadaMetros); // frena y arranca con suavidad
+  S.d += CONFIG.velocidadBase * S.velocidad * factor * dt;
+  if (sig && S.d >= sig.d) { S.d = sig.d; entrarEnParada(S.siguiente); }
+  else if (S.d >= LONGITUD) { S.d = LONGITUD; terminar(); }
+}
+function terminar() {
+  S.estado = "fin"; S.reproduciendo = false; S.seguir = false;
+  ocultarTarjeta(); setInteracciones(true); pintarBotonPlay(); dibujar(true);
+  map.fitBounds(LIMITES, { padding: 90, pitch: 50, bearing: map.getBearing() - 25, duration: 5000, essential: true });
+}
+
+/* ---------- Cámara cinematográfica ---------- */
+function sincronizarCamara() {
+  const c = map.getCenter();
+  S.cam = { center: [c.lng, c.lat], zoom: map.getZoom(), pitch: map.getPitch(), bearing: map.getBearing() };
+}
+function actualizarCamara(dt, instantaneo) {
+  const C = CONFIG.camara;
+  let centro, zoom, pitch, rumbo;
+  if (S.estado === "parado" && S.paradaActual != null) {
+    centro = PARADAS[S.paradaActual].coord; zoom = C.zoomParada; pitch = C.pitchParada;
+    rumbo = S.orbitaBase + C.giroOrbital * S.tParada * S.orbitaSentido; // órbita lenta
+  } else {
+    centro = puntoEn(S.d + C.adelanto).lngLat; zoom = C.zoom; pitch = C.pitch;
+    const r = rumboEn(S.d); rumbo = r == null ? (S.cam ? S.cam.bearing : 0) : r;
+  }
+  if (!S.cam || instantaneo) S.cam = { center: [...centro], zoom, pitch, bearing: rumbo };
+  else {
+    const kP = 1 - Math.exp(-dt * C.suavizadoPosicion), kG = 1 - Math.exp(-dt * C.suavizadoGiro), kZ = 1 - Math.exp(-dt * C.suavizadoZoom);
+    S.cam.center = [lerp(S.cam.center[0], centro[0], kP), lerp(S.cam.center[1], centro[1], kP)];
+    S.cam.zoom = lerp(S.cam.zoom, zoom, kZ);
+    S.cam.pitch = lerp(S.cam.pitch, pitch, kZ);
+    S.cam.bearing = anguloHacia(S.cam.bearing, rumbo, kG);
+  }
+  map.jumpTo(S.cam);
+}
+
+/* ---------- Dibujo por fotograma ---------- */
+function dibujar(forzar) {
+  const andando = S.reproduciendo && S.estado === "andando";
+  elPaso.classList.toggle("andando", andando);
+  if (!forzar && Math.abs(S.d - S.dDibujada) < 0.02) return;
+  S.dDibujada = S.d;
+  marcadorPaso.setLngLat(puntoEn(S.d).lngLat);
+  map.getSource("ruta-andada").setData(lineaHasta(S.d));
+  const pct = LONGITUD ? S.d / LONGITUD * 100 : 0;
+  $("relleno").style.width = pct + "%";
+  $("tirador").style.left = pct + "%";
+  $("etiqueta").textContent = `${(S.d / 1000).toFixed(2).replace(".", ",")} / ${(LONGITUD / 1000).toFixed(2).replace(".", ",")} km`;
+  const marcas = $("marcas").children;
+  PARADAS.forEach((p, i) => {
+    const pasada = p.d < S.d - 0.3 || (S.estado === "fin");
+    pines[i].classList.toggle("visitada", pasada || S.paradaActual === i);
+    pines[i].classList.toggle("activa", S.paradaActual === i);
+    marcas[i].classList.toggle("pasada", pasada || S.paradaActual === i);
+  });
+}
+function bucle(t) {
+  const dt = S.ultimo == null ? 0 : Math.min(0.05, (t - S.ultimo) / 1000);
+  S.ultimo = t;
+  if (S.reproduciendo) avanzar(dt);
+  dibujar(false);
+  if (S.reproduciendo && S.seguir) actualizarCamara(dt, false);
+  requestAnimationFrame(bucle);
+}
+
+/* ---------- Controles ---------- */
+const HANDLERS = ["dragPan", "scrollZoom", "boxZoom", "dragRotate", "keyboard", "doubleClickZoom", "touchZoomRotate", "touchPitch"];
+function setInteracciones(on) { HANDLERS.forEach((h) => map[h] && (on ? map[h].enable() : map[h].disable())); }
+const ICONO_PLAY = '<svg viewBox="0 0 24 24"><path d="M7 4.5v15l13-7.5z"/></svg>';
+const ICONO_PAUSA = '<svg viewBox="0 0 24 24"><path d="M6 4h4v16H6zM14 4h4v16h-4z"/></svg>';
+const ICONO_REPETIR = '<svg viewBox="0 0 24 24"><path d="M12 5V2L7 6l5 4V7a6 6 0 1 1-6 6H4a8 8 0 1 0 8-8z"/></svg>';
+function pintarBotonPlay() { $("btn-play").innerHTML = S.reproduciendo ? ICONO_PAUSA : (S.estado === "fin" ? ICONO_REPETIR : ICONO_PLAY); }
+
+function reproducir() {
+  if (!listo) return;
+  if (S.modoConstructor) salirConstructor();
+  if (S.estado === "fin") { reiniciar(); return; }
+  map.stop();
+  S.reproduciendo = true; S.seguir = true; S.iniciado = true;
+  sincronizarCamara(); // la cámara vuelve suavemente desde donde la dejó el usuario
+  setInteracciones(false);
+  $("intro").classList.add("oculto");
+  pintarBotonPlay();
+}
+function pausar() { S.reproduciendo = false; setInteracciones(true); pintarBotonPlay(); }
+const alternar = () => (S.reproduciendo ? pausar() : reproducir());
+function reiniciar() {
+  S.d = 0; S.siguiente = 0; S.estado = "andando"; S.paradaActual = null; S.dDibujada = -1;
+  ocultarTarjeta();
+  reproducir();
+}
+function irA(d) {
+  if (!listo) return;
+  S.d = clamp(d, 0, LONGITUD);
+  ocultarTarjeta(); S.paradaActual = null; S.estado = "andando";
+  const i = PARADAS.findIndex((p) => p.d > S.d + 0.01);
+  S.siguiente = i === -1 ? PARADAS.length : i;
+  if (S.d >= LONGITUD) S.siguiente = PARADAS.length;
+  S.dDibujada = -1; dibujar(true);
+  if (!S.modoConstructor) { actualizarCamara(0, true); S.seguir = true; }
+}
+function cambiarVelocidad(v) {
+  S.velocidad = v;
+  document.querySelectorAll("#velocidad button").forEach((b) => b.classList.toggle("on", Number(b.dataset.v) === v));
+  elPaso && elPaso.style.setProperty("--mecida", (1.7 / Math.sqrt(v)).toFixed(2) + "s");
+}
+
+let tAviso;
+function aviso(txt, ms = 1800) {
+  const el = $("aviso"); el.textContent = txt; el.classList.add("visible");
+  clearTimeout(tAviso); tAviso = setTimeout(() => el.classList.remove("visible"), ms);
+}
+function alternarModoVideo() {
+  const on = document.body.classList.toggle("modo-video");
+  if (on) aviso("Modo Vídeo · pulsa H para salir", 1400);
+}
+
+/* Encuadre: pantalla completa, 16:9 o 9:16 */
+let aspecto = "full";
+function maquetar() {
+  const st = $("stage"), vw = innerWidth, vh = innerHeight;
+  let w = vw, h = vh;
+  if (aspecto === "16:9") { w = Math.min(vw, vh * 16 / 9); h = w * 9 / 16; }
+  if (aspecto === "9:16") { h = Math.min(vh, vw * 16 / 9); w = h * 9 / 16; }
+  st.style.width = Math.round(w) + "px"; st.style.height = Math.round(h) + "px";
+  st.classList.toggle("enmarcado", aspecto !== "full");
+  st.classList.toggle("vertical", w / h < 0.9);
+  map.resize();
+}
+
+/* Barra de progreso interactiva */
+(function () {
+  const pista = $("pista"); let arrastrando = false, estabaReproduciendo = false;
+  const desdeEvento = (e) => { const r = pista.getBoundingClientRect(); irA(clamp((e.clientX - r.left) / r.width, 0, 1) * LONGITUD); };
+  pista.addEventListener("pointerdown", (e) => { arrastrando = true; estabaReproduciendo = S.reproduciendo; if (S.reproduciendo) pausar(); if (S.estado === "fin") S.estado = "andando"; pista.setPointerCapture(e.pointerId); map.stop(); desdeEvento(e); });
+  pista.addEventListener("pointermove", (e) => arrastrando && desdeEvento(e));
+  const soltar = () => { if (!arrastrando) return; arrastrando = false; if (estabaReproduciendo) reproducir(); };
+  pista.addEventListener("pointerup", soltar); pista.addEventListener("pointercancel", soltar);
+})();
+
+/* ---------- Modo Sacar Coordenadas ---------- */
+const trazo = [];
+function textoTrazo() { return "[\n" + trazo.map((c) => `  [${c[0].toFixed(6)}, ${c[1].toFixed(6)}]`).join(",\n") + "\n]"; }
+async function copiar(texto) {
+  try { await navigator.clipboard.writeText(texto); return true; }
+  catch (e) {
+    const ta = $("c-salida"); ta.value = texto; ta.select();
+    try { return document.execCommand("copy"); } catch (e2) { return false; }
+  }
+}
+function refrescarTrazo(copiarAhora) {
+  const feats = trazo.map((c) => ({ type: "Feature", properties: {}, geometry: { type: "Point", coordinates: c } }));
+  if (trazo.length > 1) feats.push({ type: "Feature", properties: {}, geometry: { type: "LineString", coordinates: trazo } });
+  map.getSource("trazo-constructor").setData({ type: "FeatureCollection", features: feats });
+  const txt = trazo.length ? textoTrazo() : "";
+  $("c-salida").value = txt;
+  $("c-cuenta").textContent = `${trazo.length} ${trazo.length === 1 ? "punto" : "puntos"}`;
+  if (copiarAhora && txt) copiar(txt).then((ok) => aviso(ok ? `Copiado al portapapeles · ${trazo.length} puntos` : "Copia manualmente desde el panel", 1200));
+}
+function entrarConstructor() {
+  pausar(); S.modoConstructor = true; S.seguir = false;
+  document.body.classList.add("constructor");
+  $("intro").classList.add("oculto");
+  map.easeTo({ pitch: 0, bearing: 0, duration: 900 }); // vista cenital para marcar con precisión
+  aviso("Haz clic sobre las calles para trazar el recorrido", 2200);
+}
+function salirConstructor() {
+  S.modoConstructor = false; document.body.classList.remove("constructor");
+  if (!S.iniciado) $("intro").classList.remove("oculto");
+}
+map.on("click", (e) => {
+  if (!S.modoConstructor) return;
+  trazo.push([Number(e.lngLat.lng.toFixed(6)), Number(e.lngLat.lat.toFixed(6))]);
+  refrescarTrazo(true);
+});
+$("btn-coords").onclick = entrarConstructor;
+$("c-cerrar").onclick = salirConstructor;
+$("c-deshacer").onclick = () => { trazo.pop(); refrescarTrazo(true); };
+$("c-limpiar").onclick = () => { trazo.length = 0; refrescarTrazo(false); };
+$("c-copiar").onclick = () => trazo.length ? refrescarTrazo(true) : aviso("Aún no hay puntos");
+
+/* ---------- Botones y teclado ---------- */
+$("btn-play").onclick = alternar;
+$("btn-intro").onclick = reproducir;
+$("btn-reset").onclick = reiniciar;
+$("btn-video").onclick = alternarModoVideo;
+$("btn-fs").onclick = () => (document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen().catch(() => {}));
+document.querySelectorAll("#velocidad button").forEach((b) => (b.onclick = () => cambiarVelocidad(Number(b.dataset.v))));
+$("aspecto").onchange = (e) => { aspecto = e.target.value; maquetar(); };
+window.addEventListener("resize", maquetar);
+document.addEventListener("fullscreenchange", () => setTimeout(maquetar, 50));
+document.addEventListener("keydown", (e) => {
+  if (/INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) return;
+  const k = e.key.toLowerCase();
+  if (S.modoConstructor && (e.ctrlKey || e.metaKey) && k === "z") { e.preventDefault(); trazo.pop(); refrescarTrazo(true); return; }
+  if (k === " ") { e.preventDefault(); alternar(); }
+  else if (k === "h") alternarModoVideo();
+  else if (k === "r") reiniciar();
+  else if (k === "f") $("btn-fs").click();
+  else if (k === "1" || k === "2" || k === "4") cambiarVelocidad(Number(k));
+  else if (k === "escape" && S.modoConstructor) salirConstructor();
+});
+
+/* ---------- Arranque ---------- */
+$("cab-titulo").textContent = CONFIG.titulo;
+$("cab-sub").textContent = CONFIG.subtitulo;
+$("cabecera").hidden = !CONFIG.titulo && !CONFIG.subtitulo;
+pintarBotonPlay();
+maquetar();
+// Se arranca en cuanto el estilo está listo ("style.load"), sin esperar a que
+// terminen de cargar todas las teselas: así no se bloquea si alguna tarda.
+let listo = false;
+function iniciar() {
+  if (listo) return;
+  listo = true;
+  personalizarEstilo();
+  crearMarcadores();
+  cambiarVelocidad(1);
+  dibujar(true);
+  requestAnimationFrame(bucle);
+}
+map.on("style.load", iniciar);
+map.on("load", iniciar);
+</script>
+</body>
+</html>
