@@ -13,8 +13,11 @@
 //    cuadrante_trono: [ ...turnos... ] | null,
 //    cuadrante_cruz:  [ ...turnos... ] | null,
 //    tramos: [ { id, nombre, desde, hasta, fase, orden,
-//                turno_trono, turno_cruz, texto } ],
-//    recorrido: { nombre_archivo, puntos: [[lat,lng],...] } | null,
+//                turno_trono, turno_cruz, texto,
+//                fin_ruta } ],      <- 0..1: dónde acaba el tramo en el
+//                                      recorrido (lo marca el mapa)
+//    recorrido: { nombre_archivo, origen: 'gpx'|'dibujo',
+//                 puntos: [{lat,lng},...] } | null,   (ver lib/mapa.js)
 //    normativa: string,
 //    notas_costalero: { [costaleroId]: 'texto' },
 //    creado, actualizado, publicado_en

@@ -1,14 +1,23 @@
 // =============================================================
 //  PESTAÑA DE TRAMOS
-//  Recorrido, tramos con desde/hasta y asignación de turnos.
+//  Mapa del recorrido dividido en tramos (cada uno del color de su
+//  turno), lista de tramos con desde/hasta y asignación de turnos,
+//  y vista cinematográfica en 3D.
 // =============================================================
 
-import { useMemo, useRef, useState } from 'react'
+import { Suspense, lazy, useCallback, useMemo, useRef, useState } from 'react'
 import { FASES } from '../lib/constantes'
 import {
   tramoVacio, reordenarTramos, moverTramo, letrasTurno,
 } from '../lib/procesiones'
+import {
+  coordsDeRecorrido, crearRuta, simplificar, puntosParaGuardar, finesDeTramos, colorTurno,
+} from '../lib/mapa'
 import { Modal, Alerta, Vacio } from './ui'
+
+// El mapa (MapLibre) pesa mucho: solo se descarga al abrir esta pestaña
+const MapaTramos = lazy(() => import('./MapaTramos'))
+const Recorrido3D = lazy(() => import('./Recorrido3D'))
 
 export default function PestanaTramos({
   procesion,
@@ -18,10 +27,21 @@ export default function PestanaTramos({
 }) {
   const [editando, setEditando] = useState(null)
   const [modalRuta, setModalRuta] = useState(false)
+  const [seleccionado, setSeleccionado] = useState(null)
+  const [ver3D, setVer3D] = useState(false)
 
   const tramos = useMemo(
     () => reordenarTramos(procesion.tramos || []),
     [procesion.tramos]
+  )
+  const coords = useMemo(() => coordsDeRecorrido(procesion.recorrido), [procesion.recorrido])
+  const tramoSel = tramos.find((t) => t.id === seleccionado) || null
+  const numeroSel = tramoSel ? tramos.indexOf(tramoSel) + 1 : 0
+
+  // Pulsar el mismo tramo otra vez lo deselecciona
+  const seleccionar = useCallback(
+    (id) => setSeleccionado((actual) => (id && actual === id ? null : id)),
+    []
   )
 
   const letrasTrono = letrasTurno(procesion.turnos_trono || 0, 'trono')   // A, B, C…
@@ -46,7 +66,18 @@ export default function PestanaTramos({
     setEditando(null)
   }
 
-  const mover = (id, dir) => onCambiar({ tramos: moverTramo(tramos, id, dir) })
+  // Al reordenar, los relevos se quedan en su sitio del mapa: lo que se
+  // mueve es el tramo (nombre, turnos…), no el trozo de calle.
+  const mover = (id, dir) => {
+    const fines = finesDeTramos(tramos)
+    const movidos = moverTramo(tramos, id, dir)
+    const conRuta = tramos.some((t) => typeof t.fin_ruta === 'number')
+    onCambiar({
+      tramos: conRuta
+        ? movidos.map((t, k) => ({ ...t, fin_ruta: k === movidos.length - 1 ? 1 : Math.round(fines[k] * 10000) / 10000 }))
+        : movidos,
+    })
+  }
 
   const cambiarTurno = (id, campo, valor) => {
     onCambiar({
@@ -70,45 +101,54 @@ export default function PestanaTramos({
   return (
     <div className="space-y-6">
 
-      {/* ---- Recorrido ---- */}
-      <div className="card p-5">
-        <div className="flex items-start justify-between gap-4 flex-wrap">
-          <div>
-            <h3 className="font-serif text-base font-bold text-morado mb-1">
-              Recorrido de la procesión
-            </h3>
-            {procesion.recorrido ? (
-              <p className="text-sm text-slate-600">
-                📍 <b>{procesion.recorrido.nombre_archivo}</b>
-                {procesion.recorrido.puntos?.length > 0 &&
-                  ` · ${procesion.recorrido.puntos.length} puntos`}
-              </p>
-            ) : (
-              <p className="text-sm text-slate-400">
-                Todavía no has subido ningún recorrido. Es opcional.
-              </p>
-            )}
-          </div>
+      {/* ---- Mapa del recorrido con los tramos ---- */}
+      <Suspense fallback={<div className="card grid h-[520px] place-items-center text-sm text-slate-400">Cargando mapa…</div>}>
+      <MapaTramos
+        recorrido={procesion.recorrido}
+        tramos={tramos}
+        seleccionado={seleccionado}
+        onSeleccionar={seleccionar}
+        soloLectura={soloLectura}
+        onCambiarTramos={(nuevos) => onCambiar({ tramos: reordenarTramos(nuevos) })}
+        onGuardarRecorrido={(r) => { onCambiar({ recorrido: r }); avisar('Recorrido guardado.') }}
+        onSubirArchivo={() => setModalRuta(true)}
+        onQuitarRecorrido={() => onCambiar({ recorrido: null })}
+        onVer3D={() => setVer3D(true)}
+        avisar={avisar}
+      />
+      </Suspense>
 
-          {!soloLectura && (
-            <div className="flex gap-2">
-              <button onClick={() => setModalRuta(true)} className="btn-ghost text-xs">
-                {procesion.recorrido ? '🔄 Cambiar' : '📍 Subir GPX/KML'}
-              </button>
-              {procesion.recorrido && (
-                <button
-                  onClick={() => {
-                    if (confirm('¿Quitar el recorrido?')) onCambiar({ recorrido: null })
-                  }}
-                  className="btn-ghost text-xs text-red-500 px-2"
-                >
-                  🗑️
-                </button>
-              )}
-            </div>
+      {/* ---- Tramo seleccionado: turnos a mano ---- */}
+      {tramoSel && (
+        <div className="card animate-aparecer flex flex-wrap items-center gap-3 border-l-4 px-5 py-3"
+             style={{ borderLeftColor: colorTurno(tramoSel.turno_trono) }}>
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white"
+                style={{ background: colorTurno(tramoSel.turno_trono) }}>
+            {numeroSel}
+          </span>
+          <div className="min-w-[180px] flex-1">
+            <p className="text-sm font-semibold text-slate-800">{tramoSel.nombre || `Tramo ${numeroSel}`}</p>
+            <p className="text-xs text-slate-500">
+              {(FASES[tramoSel.fase] || FASES.ida).nombre}
+              {(tramoSel.desde || tramoSel.hasta) && ` · ${tramoSel.desde || '—'} → ${tramoSel.hasta || '—'}`}
+            </p>
+          </div>
+          <SelectorTurno
+            etiqueta="Trono" clase="text-morado" valor={tramoSel.turno_trono} opciones={letrasTrono}
+            soloLectura={soloLectura} onCambiar={(v) => cambiarTurno(tramoSel.id, 'turno_trono', v)}
+          />
+          {procesion.lleva_cruz && (
+            <SelectorTurno
+              etiqueta="Cruz" clase="text-sky-700" valor={tramoSel.turno_cruz} opciones={letrasCruz}
+              soloLectura={soloLectura} onCambiar={(v) => cambiarTurno(tramoSel.id, 'turno_cruz', v)}
+            />
           )}
+          {!soloLectura && (
+            <button onClick={() => setEditando({ ...tramoSel })} className="btn-ghost px-3 py-1.5 text-xs">✏️ Editar</button>
+          )}
+          <button onClick={() => setSeleccionado(null)} className="px-2 text-lg leading-none text-slate-400 hover:text-slate-700" title="Quitar selección">×</button>
         </div>
-      </div>
+      )}
 
       {sinTurno.length > 0 && (
         <Alerta tipo="aviso">
@@ -130,6 +170,9 @@ export default function PestanaTramos({
         onMover={mover}
         onCambiarTurno={cambiarTurno}
         onAnadir={() => anadir('ida')}
+        seleccionado={seleccionado}
+        onSeleccionar={seleccionar}
+        desplazamiento={0}
       />
 
       {/* ---- Tramos de regreso ---- */}
@@ -146,6 +189,9 @@ export default function PestanaTramos({
         onCambiarTurno={cambiarTurno}
         onAnadir={() => anadir('regreso')}
         nota="Entre la ida y el regreso hay descanso, así que cargar en el último tramo de la ida y el primero del regreso no cuenta como tramos seguidos."
+        seleccionado={seleccionado}
+        onSeleccionar={seleccionar}
+        desplazamiento={ida.length}
       />
 
       {/* ---- Modales ---- */}
@@ -164,7 +210,38 @@ export default function PestanaTramos({
         onCerrar={() => setModalRuta(false)}
         onCargar={(r) => { onCambiar({ recorrido: r }); setModalRuta(false); avisar('Recorrido cargado.') }}
       />
+
+      {ver3D && (
+        <Suspense fallback={null}>
+          <Recorrido3D
+            abierto={ver3D}
+            onCerrar={() => setVer3D(false)}
+            coords={coords}
+            tramos={tramos}
+            titulo={procesion.nombre}
+            subtitulo="Recorrido procesional"
+            llevaCruz={procesion.lleva_cruz}
+          />
+        </Suspense>
+      )}
     </div>
+  )
+}
+
+function SelectorTurno({ etiqueta, clase, valor, opciones, soloLectura, onCambiar }) {
+  return (
+    <label className="flex shrink-0 items-center gap-1.5">
+      <span className={`text-[10px] font-bold uppercase tracking-wide ${clase}`}>{etiqueta}</span>
+      <select
+        className="input w-16 px-2 py-1 text-sm"
+        value={valor || ''}
+        disabled={soloLectura}
+        onChange={(e) => onCambiar(e.target.value)}
+      >
+        <option value="">—</option>
+        {opciones.map((l) => <option key={l} value={l}>{l}</option>)}
+      </select>
+    </label>
   )
 }
 
@@ -175,6 +252,7 @@ export default function PestanaTramos({
 function BloqueFase({
   titulo, icono, tramos, letrasTrono, letrasCruz, llevaCruz,
   soloLectura, onEditar, onMover, onCambiarTurno, onAnadir, nota,
+  seleccionado, onSeleccionar, desplazamiento = 0,
 }) {
   return (
     <div className="card overflow-hidden">
@@ -205,13 +283,23 @@ function BloqueFase({
       ) : (
         <div className="divide-y divide-slate-100">
           {tramos.map((t, i) => (
-            <div key={t.id} className="px-5 py-3 hover:bg-slate-50/50 transition">
+            <div
+              key={t.id}
+              onClick={(e) => { if (!e.target.closest('select, button, label')) onSeleccionar(t.id) }}
+              className={`cursor-pointer px-5 py-3 transition ${
+                seleccionado === t.id ? 'bg-oro/10' : 'hover:bg-slate-50/50'
+              }`}
+            >
               <div className="flex items-center gap-3 flex-wrap">
 
-                {/* Orden */}
-                <span className="w-7 h-7 rounded-full bg-morado/10 text-morado
-                                 flex items-center justify-center text-xs font-bold shrink-0">
-                  {i + 1}
+                {/* Orden, del color de su turno de trono (igual que en el mapa) */}
+                <span
+                  className={`w-7 h-7 rounded-full text-white flex items-center justify-center text-xs font-bold shrink-0
+                              ${seleccionado === t.id ? 'ring-2 ring-offset-2 ring-morado' : ''}`}
+                  style={{ background: colorTurno(t.turno_trono) }}
+                  title="Ver en el mapa"
+                >
+                  {desplazamiento + i + 1}
                 </span>
 
                 {/* Nombre y recorrido */}
@@ -448,11 +536,20 @@ function ModalRecorrido({ abierto, onCerrar, onCargar }) {
 
     try {
       const texto = await file.text()
-      const puntos = extraerPuntos(texto)
-      if (!puntos.length) {
+      const pares = extraerPuntos(texto)                 // [lat, lon]
+      if (pares.length < 2) {
         throw new Error('No se han encontrado coordenadas en el archivo.')
       }
-      setPrevio({ nombre_archivo: file.name, puntos })
+      // Se guarda como [{lat,lng}] (Firestore no admite arrays anidados)
+      // y sin puntos redundantes para no engordar el documento.
+      const coords = simplificar(pares.map(([lat, lon]) => [lon, lat]))
+      const ruta = crearRuta(coords)
+      setPrevio({
+        nombre_archivo: file.name,
+        origen: 'gpx',
+        puntos: puntosParaGuardar(coords),
+        metros: ruta ? Math.round(ruta.longitud) : 0,
+      })
     } catch (err) {
       setError(err.message || 'No se ha podido leer el archivo.')
     }
@@ -482,12 +579,12 @@ function ModalRecorrido({ abierto, onCerrar, onCargar }) {
           <Alerta tipo="exito">
             <b>{previo.nombre_archivo}</b>
             <br />
-            {previo.puntos.length} puntos de recorrido detectados.
+            {previo.puntos.length} puntos · {(previo.metros / 1000).toFixed(2).replace('.', ',')} km de recorrido.
           </Alerta>
 
           <div className="flex gap-2 justify-end">
             <button onClick={onCerrar} className="btn-ghost">Cancelar</button>
-            <button onClick={() => onCargar(previo)} className="btn-oro">
+            <button onClick={() => { const { metros: _m, ...r } = previo; onCargar(r) }} className="btn-oro">
               Guardar recorrido
             </button>
           </div>

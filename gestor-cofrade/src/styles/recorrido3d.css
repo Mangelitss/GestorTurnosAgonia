@@ -1,0 +1,58 @@
+/* =============================================================
+   RECORRIDO EN 3D: paso, marcas de parada y tarjeta cofrade
+   ============================================================= */
+
+/* --- Paso --- */
+.r3d-paso { position: relative; width: var(--tam, 96px); pointer-events: none; }
+.r3d-paso .sombra { position: absolute; left: 6%; right: 6%; bottom: -7px; height: 16px; border-radius: 50%;
+  background: radial-gradient(ellipse at center, rgba(255,196,90,.55), rgba(255,160,60,.18) 45%, transparent 70%); filter: blur(2px); }
+.r3d-paso .luz { position: absolute; left: -60%; right: -60%; bottom: -30px; height: 70px; border-radius: 50%;
+  background: radial-gradient(ellipse at center, rgba(255,200,110,.28), transparent 65%); }
+.r3d-paso .mece { position: relative; transform-origin: 50% 100%;
+  filter: drop-shadow(0 6px 10px rgba(0,0,0,.6)) drop-shadow(0 0 14px rgba(255,200,100,.35)); }
+.r3d-paso .mece > * { display: block; width: 100%; height: auto; }
+.r3d-paso.andando .mece { animation: r3d-mecida var(--mecida, 1.7s) ease-in-out infinite alternate; }
+.r3d-paso.levanta .mece { animation: r3d-levanta .75s cubic-bezier(.3,1.6,.5,1); }
+@keyframes r3d-mecida {
+  0% { transform: rotate(-1.8deg) translateY(0); }
+  50% { transform: rotate(0deg) translateY(-2.5px); }
+  100% { transform: rotate(1.8deg) translateY(0); }
+}
+@keyframes r3d-levanta { 0% { transform: translateY(0); } 35% { transform: translateY(-9px); } 100% { transform: translateY(0); } }
+.r3d-paso .llama { transform-box: fill-box; transform-origin: 50% 100%; animation: r3d-parpadeo .9s ease-in-out infinite alternate; }
+@keyframes r3d-parpadeo { 0% { transform: scale(1, 1); opacity: .95; } 40% { transform: scale(.92, 1.08); } 100% { transform: scale(1.06, .9); opacity: 1; } }
+
+/* --- Marcas de parada / relevo --- */
+.r3d-pin { width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center;
+  border: 1.5px solid #e2b84f; background: rgba(30,10,42,.88); color: #e2b84f;
+  font: 600 11px/1 'Segoe UI', system-ui, sans-serif; box-shadow: 0 0 14px rgba(226,184,79,.45); transition: background .5s, color .5s; }
+.r3d-pin.visitada { background: #e2b84f; color: #2a0f3d; }
+.r3d-pin.activa::after { content: ''; position: absolute; inset: -2px; border-radius: 50%; border: 2px solid #e2b84f;
+  animation: r3d-pulso 1.6s ease-out infinite; }
+@keyframes r3d-pulso { from { transform: scale(1); opacity: .9; } to { transform: scale(2.6); opacity: 0; } }
+
+/* --- Tarjeta de parada --- */
+.r3d-card { position: absolute; left: 26px; bottom: var(--card-bottom, 112px); width: min(410px, calc(100% - 52px));
+  background: linear-gradient(160deg, rgba(44,16,62,.94), rgba(16,8,24,.95));
+  border: 1px solid #e2b84f; border-radius: 3px; color: #f4ead2;
+  box-shadow: 0 0 0 4px rgba(16,8,24,.65), 0 0 0 5px rgba(226,184,79,.35), 0 24px 60px rgba(0,0,0,.65), 0 0 50px rgba(226,184,79,.12);
+  opacity: 0; transform: translateY(26px) scale(.97); filter: blur(5px);
+  transition: opacity .7s ease, transform .9s cubic-bezier(.2,.8,.2,1), filter .7s ease; pointer-events: none; overflow: hidden; }
+.r3d-card.visible { opacity: 1; transform: none; filter: none; }
+.r3d-card .esq { position: absolute; width: 9px; height: 9px; border: 1px solid #e2b84f; transform: rotate(45deg); background: #2a0f3d; z-index: 2; }
+.r3d-card .esq.a { top: -5px; left: -5px; } .r3d-card .esq.b { top: -5px; right: -5px; }
+.r3d-card .esq.c { bottom: -5px; left: -5px; } .r3d-card .esq.d { bottom: -5px; right: -5px; }
+.r3d-card .kicker { font: 600 10.5px/1 'Segoe UI', system-ui, sans-serif; letter-spacing: .28em; text-transform: uppercase; color: #e2b84f; }
+.r3d-card h2 { margin: 10px 0 0; font: 700 23px/1.18 Georgia, 'Times New Roman', serif; letter-spacing: .02em; color: #fff6dd; }
+.r3d-card .camino { margin-top: 6px; font: italic 16px/1.35 Georgia, serif; color: #e8d08c; }
+.r3d-card .ornamento { display: flex; align-items: center; gap: 10px; margin: 14px 0 12px; color: #e2b84f; font-size: 12px; }
+.r3d-card .ornamento::before, .r3d-card .ornamento::after { content: ''; flex: 1; height: 1px; background: linear-gradient(90deg, transparent, #e2b84f, transparent); }
+.r3d-card .desc { font: 16px/1.45 Georgia, serif; color: #eadfc4; white-space: pre-wrap; }
+.r3d-card .turno { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 2px;
+  font: 700 12px/1 'Segoe UI', system-ui, sans-serif; letter-spacing: .04em; }
+.r3d-card .temporizador { height: 2px; background: rgba(226,184,79,.15); }
+.r3d-card .temporizador span { display: block; height: 100%; background: linear-gradient(90deg, #7b3fa8, #e2b84f);
+  transform-origin: left; animation: r3d-tiempo var(--pausa, 4s) linear forwards; }
+.r3d-card .temporizador.pausado span { animation-play-state: paused; }
+@keyframes r3d-tiempo { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+.r3d-vertical .r3d-card { left: 18px; right: 18px; width: auto; }
